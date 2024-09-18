@@ -8,23 +8,20 @@ from libc.stdlib cimport qsort
 
 cdef extern from *:
     """
-    #if defined(_MSC_VER)
-        #include <intrin.h>
-        #pragma intrinsic(__popcnt64)
+    #if defined(__GNUC__) || defined(__clang__)
+        #define HAS_BUILTIN_POPCOUNTLL 1
+    #else
+        #define HAS_BUILTIN_POPCOUNTLL 0
     #endif
 
     static int portable_popcount64(unsigned long long x) {
-    #if defined(__GNUC__) || defined(__clang__)
+    #if HAS_BUILTIN_POPCOUNTLL
         return __builtin_popcountll(x);
-    #elif defined(_MSC_VER)
-        return __popcnt64(x);
     #else
-        int count = 0;
-        while (x) {
-            count += x & 1;
-            x >>= 1;
-        }
-        return count;
+        x = x - ((x >> 1) & 0x5555555555555555ULL);
+        x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
+        x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0FULL;
+        return (int)((x * 0x0101010101010101ULL) >> 56);
     #endif
     }
     """

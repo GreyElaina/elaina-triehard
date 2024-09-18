@@ -6,13 +6,37 @@ from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from cpython.unicode cimport PyUnicode_FromString
 from libc.stdlib cimport qsort
 
-cdef extern int __builtin_popcountll(unsigned long long) nogil
+cdef extern from *:
+    """
+    #if defined(_MSC_VER)
+        #include <intrin.h>
+        #pragma intrinsic(__popcnt64)
+    #endif
+
+    static int portable_popcount64(unsigned long long x) {
+    #if defined(__GNUC__) || defined(__clang__)
+        return __builtin_popcountll(x);
+    #elif defined(_MSC_VER)
+        return __popcnt64(x);
+    #else
+        // 通用实现
+        int count = 0;
+        while (x) {
+            count += x & 1;
+            x >>= 1;
+        }
+        return count;
+    #endif
+    }
+    """
+    int portable_popcount64(unsigned long long x)
+
 
 cdef int popcount(unsigned long long x):
     """
     计算整数 x 中设置为 1 的位数。
     """
-    return __builtin_popcountll(x)
+    return portable_popcount64(x)
 
 
 cdef int compare_unsigned_char(const void *a, const void *b) noexcept nogil:

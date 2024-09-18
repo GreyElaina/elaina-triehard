@@ -19,7 +19,6 @@ cdef extern from *:
     #elif defined(_MSC_VER)
         return __popcnt64(x);
     #else
-        // 通用实现
         int count = 0;
         while (x) {
             count += x & 1;

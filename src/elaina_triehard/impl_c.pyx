@@ -76,40 +76,67 @@ cdef class TrieHard:
         cdef int num_unique_bytes
         cdef int[256] byte_present = [0] * 256
 
+        # 初始化成员变量
+        self.nodes = NULL
+        self.num_nodes = 0
+        self.bytes_strings = NULL
+        self.bytes_lengths = NULL
+        self.num_strings = 0
+        self.max_mask_bit = 0
+
         num_unique_bytes = 0
         self.byte_to_mask = [0] * 256
 
         self.num_strings = len(strings)
+        if self.num_strings == 0:
+            return  # 无需构建 Trie
+
         self.bytes_strings = <unsigned char**>malloc(self.num_strings * sizeof(unsigned char*))
+        if self.bytes_strings == NULL:
+            raise MemoryError("Failed to allocate memory for bytes_strings.")
+
         self.bytes_lengths = <int*>malloc(self.num_strings * sizeof(int))
+        if self.bytes_lengths == NULL:
+            free(self.bytes_strings)
+            self.bytes_strings = NULL
+            raise MemoryError("Failed to allocate memory for bytes_lengths.")
 
+        # 初始化为 NULL，便于在异常时正确释放
         for i in range(self.num_strings):
-            bs_py = strings[i].encode('utf-8')
-            bs = <unsigned char*>bs_py
-            length = len(bs_py)
-            self.bytes_lengths[i] = length
-            self.bytes_strings[i] = <unsigned char*>PyMem_Malloc(length * sizeof(unsigned char))
-            memcpy(self.bytes_strings[i], bs, length * sizeof(unsigned char))
-            for j in range(length):
-                b = bs[j]
-                if byte_present[b] == 0:
-                    byte_present[b] = 1
-                    unique_bytes_list[num_unique_bytes] = b
-                    num_unique_bytes += 1
+            self.bytes_strings[i] = NULL
 
-        # 使用 qsort 对 unique_bytes_list 进行排序
-        qsort(unique_bytes_list, num_unique_bytes, sizeof(unsigned char), compare_unsigned_char)
+        try:
+            for i in range(self.num_strings):
+                bs_py = strings[i].encode('utf-8')
+                bs = <unsigned char*>bs_py
+                length = len(bs_py)
+                self.bytes_lengths[i] = length
+                self.bytes_strings[i] = <unsigned char*>PyMem_Malloc(length * sizeof(unsigned char))
+                if self.bytes_strings[i] == NULL:
+                    raise MemoryError("Failed to allocate memory for bytes_strings[i].")
+                memcpy(self.bytes_strings[i], bs, length * sizeof(unsigned char))
+                for j in range(length):
+                    b = bs[j]
+                    if byte_present[b] == 0:
+                        byte_present[b] = 1
+                        unique_bytes_list[num_unique_bytes] = b
+                        num_unique_bytes += 1
 
-        # 为每个唯一字节分配位掩码
-        self.max_mask_bit = 0
-        for i in range(num_unique_bytes):
-            b = unique_bytes_list[i]
-            self.byte_to_mask[b] = 1 << self.max_mask_bit
-            self.max_mask_bit += 1
+            # 使用 qsort 对 unique_bytes_list 进行排序
+            qsort(unique_bytes_list, num_unique_bytes, sizeof(unsigned char), compare_unsigned_char)
 
-        # 构建 Trie
-        self.nodes = NULL
-        self._build_trie()
+            # 为每个唯一字节分配位掩码
+            self.max_mask_bit = 0
+            for i in range(num_unique_bytes):
+                b = unique_bytes_list[i]
+                self.byte_to_mask[b] = 1 << self.max_mask_bit
+                self.max_mask_bit += 1
+
+            # 构建 Trie
+            self._build_trie()
+        except Exception as e:
+            self.__dealloc__()
+            raise e
 
     cdef void _build_trie(self):
         """
@@ -118,6 +145,8 @@ cdef class TrieHard:
         cdef int i
         self.num_nodes = 1
         self.nodes = <TrieHardNode*>malloc(self.num_nodes * sizeof(TrieHardNode))
+        if self.nodes == NULL:
+            raise MemoryError("Failed to allocate memory for nodes.")
         # 初始化根节点
         self.nodes[0].mask = 0
         self.nodes[0].children_indices = NULL
@@ -147,6 +176,7 @@ cdef class TrieHard:
         cdef int child_num_strings
         cdef unsigned char** child_strings_array
         cdef int* child_lengths_array
+        cdef TrieHardNode* temp_nodes
 
         byte_to_strings = {}
         is_terminal = False
@@ -163,6 +193,8 @@ cdef class TrieHard:
                 # 存储完整的单词
                 word_length = length
                 self.nodes[node_index].word = <char*>malloc((word_length + 1) * sizeof(char))
+                if self.nodes[node_index].word == NULL:
+                    raise MemoryError("Failed to allocate memory for word.")
                 memcpy(self.nodes[node_index].word, bs, word_length * sizeof(char))
                 self.nodes[node_index].word[word_length] = b'\0'  # 添加字符串结束符
             if position < length:
@@ -187,6 +219,8 @@ cdef class TrieHard:
         # 创建子节点索引数组
         if num_children > 0:
             children_indices = <unsigned int*>malloc(num_children * sizeof(unsigned int))
+            if children_indices == NULL:
+                raise MemoryError("Failed to allocate memory for children_indices.")
 
         # 初始化当前节点
         self.nodes[node_index].mask = mask
@@ -194,7 +228,8 @@ cdef class TrieHard:
         self.nodes[node_index].is_terminal = is_terminal
         self.nodes[node_index].children_indices = children_indices
         # 如果不是终端节点，word 设置为 NULL
-        if not is_terminal:
+        if not is_terminal and self.nodes[node_index].word != NULL:
+            free(self.nodes[node_index].word)
             self.nodes[node_index].word = NULL
 
         # 创建子节点
@@ -202,7 +237,10 @@ cdef class TrieHard:
             child_node_index = self.num_nodes
             children_indices[i] = child_node_index
             # 重新分配 nodes 数组
-            self.nodes = <TrieHardNode*>realloc(self.nodes, (self.num_nodes + 1) * sizeof(TrieHardNode))
+            temp_nodes = <TrieHardNode*>realloc(self.nodes, (self.num_nodes + 1) * sizeof(TrieHardNode))
+            if temp_nodes == NULL:
+                raise MemoryError("Failed to reallocate memory for nodes.")
+            self.nodes = temp_nodes
             self.num_nodes += 1
             # 初始化子节点
             self.nodes[child_node_index].mask = 0
@@ -219,18 +257,25 @@ cdef class TrieHard:
             child_lengths_list = byte_to_strings[b]['lengths']
             child_num_strings = len(child_strings_list)
             child_strings_array = <unsigned char**>malloc(child_num_strings * sizeof(unsigned char*))
+            if child_strings_array == NULL:
+                raise MemoryError("Failed to allocate memory for child_strings_array.")
             child_lengths_array = <int*>malloc(child_num_strings * sizeof(int))
+            if child_lengths_array == NULL:
+                free(child_strings_array)
+                raise MemoryError("Failed to allocate memory for child_lengths_array.")
             for j in range(child_num_strings):
                 child_strings_array[j] = child_strings_list[j]
                 child_lengths_array[j] = child_lengths_list[j]
-            self._build_node(child_node_index, child_strings_array, child_lengths_array, child_num_strings, position + 1)
-            free(child_strings_array)
-            free(child_lengths_array)
+            try:
+                self._build_node(child_node_index, child_strings_array, child_lengths_array, child_num_strings, position + 1)
+            finally:
+                free(child_strings_array)
+                free(child_lengths_array)
 
     cpdef str get_closest_prefix(self, str key):
         """
         接收一个字符串，返回 Trie 中与之匹配的完整单词。
-        如果没有匹配的单词，则返回空字节串。
+        如果没有匹配的单词，则返回空字符串。
         """
         cdef TrieHardNode* current_node
         cdef int position
@@ -279,7 +324,7 @@ cdef class TrieHard:
         释放 TrieHard 分配的内存。
         """
         cdef int i
-        if self.nodes != NULL:
+        if self.nodes != NULL and self.num_nodes > 0:
             # 释放每个节点的 children_indices 和 word
             for i in range(self.num_nodes):
                 if self.nodes[i].children_indices != NULL:
@@ -290,12 +335,15 @@ cdef class TrieHard:
                     self.nodes[i].word = NULL
             free(self.nodes)
             self.nodes = NULL
-        if self.bytes_strings != NULL:
+            self.num_nodes = 0
+        if self.bytes_strings != NULL and self.num_strings > 0:
             for i in range(self.num_strings):
                 if self.bytes_strings[i] != NULL:
                     PyMem_Free(self.bytes_strings[i])
+                    self.bytes_strings[i] = NULL
             free(self.bytes_strings)
             self.bytes_strings = NULL
+            self.num_strings = 0
         if self.bytes_lengths != NULL:
             free(self.bytes_lengths)
             self.bytes_lengths = NULL

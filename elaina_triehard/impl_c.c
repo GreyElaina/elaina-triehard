@@ -6,7 +6,7 @@
         "depends": [],
         "name": "elaina_triehard.impl_c",
         "sources": [
-            "src/elaina_triehard/impl_c.pyx"
+            "elaina_triehard/impl_c.pyx"
         ]
     },
     "module_name": "elaina_triehard.impl_c"
@@ -1236,23 +1236,20 @@ static CYTHON_INLINE float __PYX_NAN() {
 #include <stdlib.h>
 #include <stddef.h>
 
-    #if defined(_MSC_VER)
-        #include <intrin.h>
-        #pragma intrinsic(__popcnt64)
+    #if defined(__GNUC__) || defined(__clang__)
+        #define HAS_BUILTIN_POPCOUNTLL 1
+    #else
+        #define HAS_BUILTIN_POPCOUNTLL 0
     #endif
 
     static int portable_popcount64(unsigned long long x) {
-    #if defined(__GNUC__) || defined(__clang__)
+    #if HAS_BUILTIN_POPCOUNTLL
         return __builtin_popcountll(x);
-    #elif defined(_MSC_VER)
-        return __popcnt64(x);
     #else
-        int count = 0;
-        while (x) {
-            count += x & 1;
-            x >>= 1;
-        }
-        return count;
+        x = x - ((x >> 1) & 0x5555555555555555ULL);
+        x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
+        x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0FULL;
+        return (int)((x * 0x0101010101010101ULL) >> 56);
     #endif
     }
     
@@ -1504,7 +1501,7 @@ static const char *__pyx_filename;
 /* #### Code section: filename_table ### */
 
 static const char *__pyx_f[] = {
-  "src/elaina_triehard/impl_c.pyx",
+  "elaina_triehard/impl_c.pyx",
   "<stringsource>",
 };
 /* #### Code section: utility_code_proto_before_types ### */
@@ -1521,7 +1518,7 @@ static const char *__pyx_f[] = {
 struct __pyx_obj_15elaina_triehard_6impl_c_TrieHard;
 struct __pyx_t_15elaina_triehard_6impl_c_TrieHardNode;
 
-/* "elaina_triehard/impl_c.pyx":50
+/* "elaina_triehard/impl_c.pyx":47
  * 
  * 
  * cdef struct TrieHardNode:             # <<<<<<<<<<<<<<
@@ -1536,7 +1533,7 @@ struct __pyx_t_15elaina_triehard_6impl_c_TrieHardNode {
   char *word;
 };
 
-/* "elaina_triehard/impl_c.pyx":58
+/* "elaina_triehard/impl_c.pyx":55
  * 
  * 
  * cdef class TrieHard:             # <<<<<<<<<<<<<<
@@ -1786,6 +1783,16 @@ static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject *const *kwvalues
 static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
     Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
 
+/* PyObjectCall.proto */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
+#else
+#define __Pyx_PyObject_Call(func, arg, kw) PyObject_Call(func, arg, kw)
+#endif
+
+/* RaiseException.proto */
+static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject *cause);
+
 /* GetItemInt.proto */
 #define __Pyx_GetItemInt(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck)\
     (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
@@ -1843,13 +1850,6 @@ static PyObject *__Pyx_PyFunction_FastCallDict(PyObject *func, PyObject **args, 
 #endif
 #endif
 
-/* PyObjectCall.proto */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
-#else
-#define __Pyx_PyObject_Call(func, arg, kw) PyObject_Call(func, arg, kw)
-#endif
-
 /* PyObjectCallMethO.proto */
 #if CYTHON_COMPILING_IN_CPYTHON
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg);
@@ -1861,6 +1861,38 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_FastCallDict(PyObject *func, PyObj
 
 /* RaiseUnexpectedTypeError.proto */
 static int __Pyx_RaiseUnexpectedTypeError(const char *expected, PyObject *obj);
+
+/* GetTopmostException.proto */
+#if CYTHON_USE_EXC_INFO_STACK && CYTHON_FAST_THREAD_STATE
+static _PyErr_StackItem * __Pyx_PyErr_GetTopmostException(PyThreadState *tstate);
+#endif
+
+/* SaveResetException.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_ExceptionSave(type, value, tb)  __Pyx__ExceptionSave(__pyx_tstate, type, value, tb)
+static CYTHON_INLINE void __Pyx__ExceptionSave(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
+#define __Pyx_ExceptionReset(type, value, tb)  __Pyx__ExceptionReset(__pyx_tstate, type, value, tb)
+static CYTHON_INLINE void __Pyx__ExceptionReset(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb);
+#else
+#define __Pyx_ExceptionSave(type, value, tb)   PyErr_GetExcInfo(type, value, tb)
+#define __Pyx_ExceptionReset(type, value, tb)  PyErr_SetExcInfo(type, value, tb)
+#endif
+
+/* GetException.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_GetException(type, value, tb)  __Pyx__GetException(__pyx_tstate, type, value, tb)
+static int __Pyx__GetException(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
+#else
+static int __Pyx_GetException(PyObject **type, PyObject **value, PyObject **tb);
+#endif
+
+/* SwapException.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_ExceptionSwap(type, value, tb)  __Pyx__ExceptionSwap(__pyx_tstate, type, value, tb)
+static CYTHON_INLINE void __Pyx__ExceptionSwap(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
+#else
+static CYTHON_INLINE void __Pyx_ExceptionSwap(PyObject **type, PyObject **value, PyObject **tb);
+#endif
 
 /* PyIntBinop.proto */
 #if !CYTHON_COMPILING_IN_PYPY
@@ -1957,9 +1989,6 @@ static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *nam
 
 /* KeywordStringCheck.proto */
 static int __Pyx_CheckKeywordStrings(PyObject *kw, const char* function_name, int kw_allowed);
-
-/* RaiseException.proto */
-static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject *cause);
 
 /* IncludeStructmemberH.proto */
 #include <structmember.h>
@@ -2267,12 +2296,13 @@ int __pyx_module_is_main_elaina_triehard__impl_c = 0;
 
 /* Implementation of "elaina_triehard.impl_c" */
 /* #### Code section: global_var ### */
+static PyObject *__pyx_builtin_MemoryError;
 static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_builtin_TypeError;
 /* #### Code section: string_decls ### */
-static const char __pyx_k_[] = "";
-static const char __pyx_k__8[] = "?";
 static const char __pyx_k_gc[] = "gc";
+static const char __pyx_k__10[] = "";
+static const char __pyx_k__17[] = "?";
 static const char __pyx_k_key[] = "key";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_name[] = "__name__";
@@ -2284,6 +2314,7 @@ static const char __pyx_k_append[] = "append";
 static const char __pyx_k_enable[] = "enable";
 static const char __pyx_k_encode[] = "encode";
 static const char __pyx_k_reduce[] = "__reduce__";
+static const char __pyx_k_dealloc[] = "__dealloc__";
 static const char __pyx_k_disable[] = "disable";
 static const char __pyx_k_lengths[] = "lengths";
 static const char __pyx_k_strings[] = "strings";
@@ -2295,6 +2326,7 @@ static const char __pyx_k_isenabled[] = "isenabled";
 static const char __pyx_k_pyx_state[] = "__pyx_state";
 static const char __pyx_k_reduce_ex[] = "__reduce_ex__";
 static const char __pyx_k_pyx_vtable[] = "__pyx_vtable__";
+static const char __pyx_k_MemoryError[] = "MemoryError";
 static const char __pyx_k_is_coroutine[] = "_is_coroutine";
 static const char __pyx_k_stringsource[] = "<stringsource>";
 static const char __pyx_k_reduce_cython[] = "__reduce_cython__";
@@ -2305,9 +2337,18 @@ static const char __pyx_k_get_closest_prefix[] = "get_closest_prefix";
 static const char __pyx_k_elaina_triehard_impl_c[] = "elaina_triehard.impl_c";
 static const char __pyx_k_TrieHard___reduce_cython[] = "TrieHard.__reduce_cython__";
 static const char __pyx_k_TrieHard___setstate_cython[] = "TrieHard.__setstate_cython__";
+static const char __pyx_k_elaina_triehard_impl_c_pyx[] = "elaina_triehard/impl_c.pyx";
 static const char __pyx_k_TrieHard_get_closest_prefix[] = "TrieHard.get_closest_prefix";
-static const char __pyx_k_src_elaina_triehard_impl_c_pyx[] = "src/elaina_triehard/impl_c.pyx";
+static const char __pyx_k_Failed_to_reallocate_memory_for[] = "Failed to reallocate memory for nodes.";
+static const char __pyx_k_Failed_to_allocate_memory_for_by[] = "Failed to allocate memory for bytes_strings.";
+static const char __pyx_k_Failed_to_allocate_memory_for_ch[] = "Failed to allocate memory for children_indices.";
+static const char __pyx_k_Failed_to_allocate_memory_for_no[] = "Failed to allocate memory for nodes.";
+static const char __pyx_k_Failed_to_allocate_memory_for_wo[] = "Failed to allocate memory for word.";
 static const char __pyx_k_self_bytes_lengths_self_bytes_st[] = "self.bytes_lengths,self.bytes_strings,self.nodes cannot be converted to a Python object for pickling";
+static const char __pyx_k_Failed_to_allocate_memory_for_by_2[] = "Failed to allocate memory for bytes_lengths.";
+static const char __pyx_k_Failed_to_allocate_memory_for_by_3[] = "Failed to allocate memory for bytes_strings[i].";
+static const char __pyx_k_Failed_to_allocate_memory_for_ch_2[] = "Failed to allocate memory for child_strings_array.";
+static const char __pyx_k_Failed_to_allocate_memory_for_ch_3[] = "Failed to allocate memory for child_lengths_array.";
 /* #### Code section: decls ### */
 static int __pyx_pf_15elaina_triehard_6impl_c_8TrieHard___init__(struct __pyx_obj_15elaina_triehard_6impl_c_TrieHard *__pyx_v_self, PyObject *__pyx_v_strings); /* proto */
 static PyObject *__pyx_pf_15elaina_triehard_6impl_c_8TrieHard_2get_closest_prefix(struct __pyx_obj_15elaina_triehard_6impl_c_TrieHard *__pyx_v_self, PyObject *__pyx_v_key); /* proto */
@@ -2356,18 +2397,30 @@ typedef struct {
   PyObject *__pyx_type_15elaina_triehard_6impl_c_TrieHard;
   #endif
   PyTypeObject *__pyx_ptype_15elaina_triehard_6impl_c_TrieHard;
-  PyObject *__pyx_kp_u_;
+  PyObject *__pyx_kp_u_Failed_to_allocate_memory_for_by;
+  PyObject *__pyx_kp_u_Failed_to_allocate_memory_for_by_2;
+  PyObject *__pyx_kp_u_Failed_to_allocate_memory_for_by_3;
+  PyObject *__pyx_kp_u_Failed_to_allocate_memory_for_ch;
+  PyObject *__pyx_kp_u_Failed_to_allocate_memory_for_ch_2;
+  PyObject *__pyx_kp_u_Failed_to_allocate_memory_for_ch_3;
+  PyObject *__pyx_kp_u_Failed_to_allocate_memory_for_no;
+  PyObject *__pyx_kp_u_Failed_to_allocate_memory_for_wo;
+  PyObject *__pyx_kp_u_Failed_to_reallocate_memory_for;
+  PyObject *__pyx_n_s_MemoryError;
   PyObject *__pyx_n_s_TrieHard;
   PyObject *__pyx_n_s_TrieHard___reduce_cython;
   PyObject *__pyx_n_s_TrieHard___setstate_cython;
   PyObject *__pyx_n_s_TrieHard_get_closest_prefix;
   PyObject *__pyx_n_s_TypeError;
-  PyObject *__pyx_n_s__8;
+  PyObject *__pyx_kp_u__10;
+  PyObject *__pyx_n_s__17;
   PyObject *__pyx_n_s_append;
   PyObject *__pyx_n_s_asyncio_coroutines;
   PyObject *__pyx_n_s_cline_in_traceback;
+  PyObject *__pyx_n_s_dealloc;
   PyObject *__pyx_kp_u_disable;
   PyObject *__pyx_n_s_elaina_triehard_impl_c;
+  PyObject *__pyx_kp_s_elaina_triehard_impl_c_pyx;
   PyObject *__pyx_kp_u_enable;
   PyObject *__pyx_n_s_encode;
   PyObject *__pyx_kp_u_gc;
@@ -2389,19 +2442,27 @@ typedef struct {
   PyObject *__pyx_kp_s_self_bytes_lengths_self_bytes_st;
   PyObject *__pyx_n_s_setstate;
   PyObject *__pyx_n_s_setstate_cython;
-  PyObject *__pyx_kp_s_src_elaina_triehard_impl_c_pyx;
   PyObject *__pyx_n_s_strings;
   PyObject *__pyx_n_u_strings;
   PyObject *__pyx_kp_s_stringsource;
   PyObject *__pyx_n_s_test;
   PyObject *__pyx_kp_u_utf_8;
   PyObject *__pyx_int_1;
+  PyObject *__pyx_tuple_;
   PyObject *__pyx_tuple__2;
+  PyObject *__pyx_tuple__3;
   PyObject *__pyx_tuple__4;
+  PyObject *__pyx_tuple__5;
   PyObject *__pyx_tuple__6;
-  PyObject *__pyx_codeobj__3;
-  PyObject *__pyx_codeobj__5;
-  PyObject *__pyx_codeobj__7;
+  PyObject *__pyx_tuple__7;
+  PyObject *__pyx_tuple__8;
+  PyObject *__pyx_tuple__9;
+  PyObject *__pyx_tuple__11;
+  PyObject *__pyx_tuple__13;
+  PyObject *__pyx_tuple__15;
+  PyObject *__pyx_codeobj__12;
+  PyObject *__pyx_codeobj__14;
+  PyObject *__pyx_codeobj__16;
 } __pyx_mstate;
 
 #if CYTHON_USE_MODULE_STATE
@@ -2446,18 +2507,30 @@ static int __pyx_m_clear(PyObject *m) {
   #endif
   Py_CLEAR(clear_module_state->__pyx_ptype_15elaina_triehard_6impl_c_TrieHard);
   Py_CLEAR(clear_module_state->__pyx_type_15elaina_triehard_6impl_c_TrieHard);
-  Py_CLEAR(clear_module_state->__pyx_kp_u_);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_by);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_by_2);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_by_3);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_ch);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_ch_2);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_ch_3);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_no);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_wo);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_Failed_to_reallocate_memory_for);
+  Py_CLEAR(clear_module_state->__pyx_n_s_MemoryError);
   Py_CLEAR(clear_module_state->__pyx_n_s_TrieHard);
   Py_CLEAR(clear_module_state->__pyx_n_s_TrieHard___reduce_cython);
   Py_CLEAR(clear_module_state->__pyx_n_s_TrieHard___setstate_cython);
   Py_CLEAR(clear_module_state->__pyx_n_s_TrieHard_get_closest_prefix);
   Py_CLEAR(clear_module_state->__pyx_n_s_TypeError);
-  Py_CLEAR(clear_module_state->__pyx_n_s__8);
+  Py_CLEAR(clear_module_state->__pyx_kp_u__10);
+  Py_CLEAR(clear_module_state->__pyx_n_s__17);
   Py_CLEAR(clear_module_state->__pyx_n_s_append);
   Py_CLEAR(clear_module_state->__pyx_n_s_asyncio_coroutines);
   Py_CLEAR(clear_module_state->__pyx_n_s_cline_in_traceback);
+  Py_CLEAR(clear_module_state->__pyx_n_s_dealloc);
   Py_CLEAR(clear_module_state->__pyx_kp_u_disable);
   Py_CLEAR(clear_module_state->__pyx_n_s_elaina_triehard_impl_c);
+  Py_CLEAR(clear_module_state->__pyx_kp_s_elaina_triehard_impl_c_pyx);
   Py_CLEAR(clear_module_state->__pyx_kp_u_enable);
   Py_CLEAR(clear_module_state->__pyx_n_s_encode);
   Py_CLEAR(clear_module_state->__pyx_kp_u_gc);
@@ -2479,19 +2552,27 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_kp_s_self_bytes_lengths_self_bytes_st);
   Py_CLEAR(clear_module_state->__pyx_n_s_setstate);
   Py_CLEAR(clear_module_state->__pyx_n_s_setstate_cython);
-  Py_CLEAR(clear_module_state->__pyx_kp_s_src_elaina_triehard_impl_c_pyx);
   Py_CLEAR(clear_module_state->__pyx_n_s_strings);
   Py_CLEAR(clear_module_state->__pyx_n_u_strings);
   Py_CLEAR(clear_module_state->__pyx_kp_s_stringsource);
   Py_CLEAR(clear_module_state->__pyx_n_s_test);
   Py_CLEAR(clear_module_state->__pyx_kp_u_utf_8);
   Py_CLEAR(clear_module_state->__pyx_int_1);
+  Py_CLEAR(clear_module_state->__pyx_tuple_);
   Py_CLEAR(clear_module_state->__pyx_tuple__2);
+  Py_CLEAR(clear_module_state->__pyx_tuple__3);
   Py_CLEAR(clear_module_state->__pyx_tuple__4);
+  Py_CLEAR(clear_module_state->__pyx_tuple__5);
   Py_CLEAR(clear_module_state->__pyx_tuple__6);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__3);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__5);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__7);
+  Py_CLEAR(clear_module_state->__pyx_tuple__7);
+  Py_CLEAR(clear_module_state->__pyx_tuple__8);
+  Py_CLEAR(clear_module_state->__pyx_tuple__9);
+  Py_CLEAR(clear_module_state->__pyx_tuple__11);
+  Py_CLEAR(clear_module_state->__pyx_tuple__13);
+  Py_CLEAR(clear_module_state->__pyx_tuple__15);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__12);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__14);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__16);
   return 0;
 }
 #endif
@@ -2514,18 +2595,30 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   #endif
   Py_VISIT(traverse_module_state->__pyx_ptype_15elaina_triehard_6impl_c_TrieHard);
   Py_VISIT(traverse_module_state->__pyx_type_15elaina_triehard_6impl_c_TrieHard);
-  Py_VISIT(traverse_module_state->__pyx_kp_u_);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_by);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_by_2);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_by_3);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_ch);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_ch_2);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_ch_3);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_no);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_Failed_to_allocate_memory_for_wo);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_Failed_to_reallocate_memory_for);
+  Py_VISIT(traverse_module_state->__pyx_n_s_MemoryError);
   Py_VISIT(traverse_module_state->__pyx_n_s_TrieHard);
   Py_VISIT(traverse_module_state->__pyx_n_s_TrieHard___reduce_cython);
   Py_VISIT(traverse_module_state->__pyx_n_s_TrieHard___setstate_cython);
   Py_VISIT(traverse_module_state->__pyx_n_s_TrieHard_get_closest_prefix);
   Py_VISIT(traverse_module_state->__pyx_n_s_TypeError);
-  Py_VISIT(traverse_module_state->__pyx_n_s__8);
+  Py_VISIT(traverse_module_state->__pyx_kp_u__10);
+  Py_VISIT(traverse_module_state->__pyx_n_s__17);
   Py_VISIT(traverse_module_state->__pyx_n_s_append);
   Py_VISIT(traverse_module_state->__pyx_n_s_asyncio_coroutines);
   Py_VISIT(traverse_module_state->__pyx_n_s_cline_in_traceback);
+  Py_VISIT(traverse_module_state->__pyx_n_s_dealloc);
   Py_VISIT(traverse_module_state->__pyx_kp_u_disable);
   Py_VISIT(traverse_module_state->__pyx_n_s_elaina_triehard_impl_c);
+  Py_VISIT(traverse_module_state->__pyx_kp_s_elaina_triehard_impl_c_pyx);
   Py_VISIT(traverse_module_state->__pyx_kp_u_enable);
   Py_VISIT(traverse_module_state->__pyx_n_s_encode);
   Py_VISIT(traverse_module_state->__pyx_kp_u_gc);
@@ -2547,19 +2640,27 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_kp_s_self_bytes_lengths_self_bytes_st);
   Py_VISIT(traverse_module_state->__pyx_n_s_setstate);
   Py_VISIT(traverse_module_state->__pyx_n_s_setstate_cython);
-  Py_VISIT(traverse_module_state->__pyx_kp_s_src_elaina_triehard_impl_c_pyx);
   Py_VISIT(traverse_module_state->__pyx_n_s_strings);
   Py_VISIT(traverse_module_state->__pyx_n_u_strings);
   Py_VISIT(traverse_module_state->__pyx_kp_s_stringsource);
   Py_VISIT(traverse_module_state->__pyx_n_s_test);
   Py_VISIT(traverse_module_state->__pyx_kp_u_utf_8);
   Py_VISIT(traverse_module_state->__pyx_int_1);
+  Py_VISIT(traverse_module_state->__pyx_tuple_);
   Py_VISIT(traverse_module_state->__pyx_tuple__2);
+  Py_VISIT(traverse_module_state->__pyx_tuple__3);
   Py_VISIT(traverse_module_state->__pyx_tuple__4);
+  Py_VISIT(traverse_module_state->__pyx_tuple__5);
   Py_VISIT(traverse_module_state->__pyx_tuple__6);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__3);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__5);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__7);
+  Py_VISIT(traverse_module_state->__pyx_tuple__7);
+  Py_VISIT(traverse_module_state->__pyx_tuple__8);
+  Py_VISIT(traverse_module_state->__pyx_tuple__9);
+  Py_VISIT(traverse_module_state->__pyx_tuple__11);
+  Py_VISIT(traverse_module_state->__pyx_tuple__13);
+  Py_VISIT(traverse_module_state->__pyx_tuple__15);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__12);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__14);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__16);
   return 0;
 }
 #endif
@@ -2602,18 +2703,30 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_type_15elaina_triehard_6impl_c_TrieHard __pyx_mstate_global->__pyx_type_15elaina_triehard_6impl_c_TrieHard
 #endif
 #define __pyx_ptype_15elaina_triehard_6impl_c_TrieHard __pyx_mstate_global->__pyx_ptype_15elaina_triehard_6impl_c_TrieHard
-#define __pyx_kp_u_ __pyx_mstate_global->__pyx_kp_u_
+#define __pyx_kp_u_Failed_to_allocate_memory_for_by __pyx_mstate_global->__pyx_kp_u_Failed_to_allocate_memory_for_by
+#define __pyx_kp_u_Failed_to_allocate_memory_for_by_2 __pyx_mstate_global->__pyx_kp_u_Failed_to_allocate_memory_for_by_2
+#define __pyx_kp_u_Failed_to_allocate_memory_for_by_3 __pyx_mstate_global->__pyx_kp_u_Failed_to_allocate_memory_for_by_3
+#define __pyx_kp_u_Failed_to_allocate_memory_for_ch __pyx_mstate_global->__pyx_kp_u_Failed_to_allocate_memory_for_ch
+#define __pyx_kp_u_Failed_to_allocate_memory_for_ch_2 __pyx_mstate_global->__pyx_kp_u_Failed_to_allocate_memory_for_ch_2
+#define __pyx_kp_u_Failed_to_allocate_memory_for_ch_3 __pyx_mstate_global->__pyx_kp_u_Failed_to_allocate_memory_for_ch_3
+#define __pyx_kp_u_Failed_to_allocate_memory_for_no __pyx_mstate_global->__pyx_kp_u_Failed_to_allocate_memory_for_no
+#define __pyx_kp_u_Failed_to_allocate_memory_for_wo __pyx_mstate_global->__pyx_kp_u_Failed_to_allocate_memory_for_wo
+#define __pyx_kp_u_Failed_to_reallocate_memory_for __pyx_mstate_global->__pyx_kp_u_Failed_to_reallocate_memory_for
+#define __pyx_n_s_MemoryError __pyx_mstate_global->__pyx_n_s_MemoryError
 #define __pyx_n_s_TrieHard __pyx_mstate_global->__pyx_n_s_TrieHard
 #define __pyx_n_s_TrieHard___reduce_cython __pyx_mstate_global->__pyx_n_s_TrieHard___reduce_cython
 #define __pyx_n_s_TrieHard___setstate_cython __pyx_mstate_global->__pyx_n_s_TrieHard___setstate_cython
 #define __pyx_n_s_TrieHard_get_closest_prefix __pyx_mstate_global->__pyx_n_s_TrieHard_get_closest_prefix
 #define __pyx_n_s_TypeError __pyx_mstate_global->__pyx_n_s_TypeError
-#define __pyx_n_s__8 __pyx_mstate_global->__pyx_n_s__8
+#define __pyx_kp_u__10 __pyx_mstate_global->__pyx_kp_u__10
+#define __pyx_n_s__17 __pyx_mstate_global->__pyx_n_s__17
 #define __pyx_n_s_append __pyx_mstate_global->__pyx_n_s_append
 #define __pyx_n_s_asyncio_coroutines __pyx_mstate_global->__pyx_n_s_asyncio_coroutines
 #define __pyx_n_s_cline_in_traceback __pyx_mstate_global->__pyx_n_s_cline_in_traceback
+#define __pyx_n_s_dealloc __pyx_mstate_global->__pyx_n_s_dealloc
 #define __pyx_kp_u_disable __pyx_mstate_global->__pyx_kp_u_disable
 #define __pyx_n_s_elaina_triehard_impl_c __pyx_mstate_global->__pyx_n_s_elaina_triehard_impl_c
+#define __pyx_kp_s_elaina_triehard_impl_c_pyx __pyx_mstate_global->__pyx_kp_s_elaina_triehard_impl_c_pyx
 #define __pyx_kp_u_enable __pyx_mstate_global->__pyx_kp_u_enable
 #define __pyx_n_s_encode __pyx_mstate_global->__pyx_n_s_encode
 #define __pyx_kp_u_gc __pyx_mstate_global->__pyx_kp_u_gc
@@ -2635,22 +2748,30 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_kp_s_self_bytes_lengths_self_bytes_st __pyx_mstate_global->__pyx_kp_s_self_bytes_lengths_self_bytes_st
 #define __pyx_n_s_setstate __pyx_mstate_global->__pyx_n_s_setstate
 #define __pyx_n_s_setstate_cython __pyx_mstate_global->__pyx_n_s_setstate_cython
-#define __pyx_kp_s_src_elaina_triehard_impl_c_pyx __pyx_mstate_global->__pyx_kp_s_src_elaina_triehard_impl_c_pyx
 #define __pyx_n_s_strings __pyx_mstate_global->__pyx_n_s_strings
 #define __pyx_n_u_strings __pyx_mstate_global->__pyx_n_u_strings
 #define __pyx_kp_s_stringsource __pyx_mstate_global->__pyx_kp_s_stringsource
 #define __pyx_n_s_test __pyx_mstate_global->__pyx_n_s_test
 #define __pyx_kp_u_utf_8 __pyx_mstate_global->__pyx_kp_u_utf_8
 #define __pyx_int_1 __pyx_mstate_global->__pyx_int_1
+#define __pyx_tuple_ __pyx_mstate_global->__pyx_tuple_
 #define __pyx_tuple__2 __pyx_mstate_global->__pyx_tuple__2
+#define __pyx_tuple__3 __pyx_mstate_global->__pyx_tuple__3
 #define __pyx_tuple__4 __pyx_mstate_global->__pyx_tuple__4
+#define __pyx_tuple__5 __pyx_mstate_global->__pyx_tuple__5
 #define __pyx_tuple__6 __pyx_mstate_global->__pyx_tuple__6
-#define __pyx_codeobj__3 __pyx_mstate_global->__pyx_codeobj__3
-#define __pyx_codeobj__5 __pyx_mstate_global->__pyx_codeobj__5
-#define __pyx_codeobj__7 __pyx_mstate_global->__pyx_codeobj__7
+#define __pyx_tuple__7 __pyx_mstate_global->__pyx_tuple__7
+#define __pyx_tuple__8 __pyx_mstate_global->__pyx_tuple__8
+#define __pyx_tuple__9 __pyx_mstate_global->__pyx_tuple__9
+#define __pyx_tuple__11 __pyx_mstate_global->__pyx_tuple__11
+#define __pyx_tuple__13 __pyx_mstate_global->__pyx_tuple__13
+#define __pyx_tuple__15 __pyx_mstate_global->__pyx_tuple__15
+#define __pyx_codeobj__12 __pyx_mstate_global->__pyx_codeobj__12
+#define __pyx_codeobj__14 __pyx_mstate_global->__pyx_codeobj__14
+#define __pyx_codeobj__16 __pyx_mstate_global->__pyx_codeobj__16
 /* #### Code section: module_code ### */
 
-/* "elaina_triehard/impl_c.pyx":34
+/* "elaina_triehard/impl_c.pyx":31
  * 
  * 
  * cdef int popcount(unsigned long long x):             # <<<<<<<<<<<<<<
@@ -2661,7 +2782,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 static int __pyx_f_15elaina_triehard_6impl_c_popcount(unsigned PY_LONG_LONG __pyx_v_x) {
   int __pyx_r;
 
-  /* "elaina_triehard/impl_c.pyx":38
+  /* "elaina_triehard/impl_c.pyx":35
  *      x  1
  *     """
  *     return portable_popcount64(x)             # <<<<<<<<<<<<<<
@@ -2671,7 +2792,7 @@ static int __pyx_f_15elaina_triehard_6impl_c_popcount(unsigned PY_LONG_LONG __py
   __pyx_r = portable_popcount64(__pyx_v_x);
   goto __pyx_L0;
 
-  /* "elaina_triehard/impl_c.pyx":34
+  /* "elaina_triehard/impl_c.pyx":31
  * 
  * 
  * cdef int popcount(unsigned long long x):             # <<<<<<<<<<<<<<
@@ -2684,7 +2805,7 @@ static int __pyx_f_15elaina_triehard_6impl_c_popcount(unsigned PY_LONG_LONG __py
   return __pyx_r;
 }
 
-/* "elaina_triehard/impl_c.pyx":41
+/* "elaina_triehard/impl_c.pyx":38
  * 
  * 
  * cdef int compare_unsigned_char(const void *a, const void *b) noexcept nogil:             # <<<<<<<<<<<<<<
@@ -2697,7 +2818,7 @@ static int __pyx_f_15elaina_triehard_6impl_c_compare_unsigned_char(void const *_
   unsigned char __pyx_v_val_b;
   int __pyx_r;
 
-  /* "elaina_triehard/impl_c.pyx":45
+  /* "elaina_triehard/impl_c.pyx":42
  *      unsigned char  qsort
  *     """
  *     cdef unsigned char val_a = (<unsigned char *> a)[0]             # <<<<<<<<<<<<<<
@@ -2706,7 +2827,7 @@ static int __pyx_f_15elaina_triehard_6impl_c_compare_unsigned_char(void const *_
  */
   __pyx_v_val_a = (((unsigned char *)__pyx_v_a)[0]);
 
-  /* "elaina_triehard/impl_c.pyx":46
+  /* "elaina_triehard/impl_c.pyx":43
  *     """
  *     cdef unsigned char val_a = (<unsigned char *> a)[0]
  *     cdef unsigned char val_b = (<unsigned char *> b)[0]             # <<<<<<<<<<<<<<
@@ -2715,7 +2836,7 @@ static int __pyx_f_15elaina_triehard_6impl_c_compare_unsigned_char(void const *_
  */
   __pyx_v_val_b = (((unsigned char *)__pyx_v_b)[0]);
 
-  /* "elaina_triehard/impl_c.pyx":47
+  /* "elaina_triehard/impl_c.pyx":44
  *     cdef unsigned char val_a = (<unsigned char *> a)[0]
  *     cdef unsigned char val_b = (<unsigned char *> b)[0]
  *     return val_a - val_b             # <<<<<<<<<<<<<<
@@ -2725,7 +2846,7 @@ static int __pyx_f_15elaina_triehard_6impl_c_compare_unsigned_char(void const *_
   __pyx_r = (__pyx_v_val_a - __pyx_v_val_b);
   goto __pyx_L0;
 
-  /* "elaina_triehard/impl_c.pyx":41
+  /* "elaina_triehard/impl_c.pyx":38
  * 
  * 
  * cdef int compare_unsigned_char(const void *a, const void *b) noexcept nogil:             # <<<<<<<<<<<<<<
@@ -2738,7 +2859,7 @@ static int __pyx_f_15elaina_triehard_6impl_c_compare_unsigned_char(void const *_
   return __pyx_r;
 }
 
-/* "elaina_triehard/impl_c.pyx":70
+/* "elaina_triehard/impl_c.pyx":67
  *     cdef int max_mask_bit
  * 
  *     def __init__(self, strings):             # <<<<<<<<<<<<<<
@@ -2786,12 +2907,12 @@ static int __pyx_pw_15elaina_triehard_6impl_c_8TrieHard_1__init__(PyObject *__py
           (void)__Pyx_Arg_NewRef_VARARGS(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 70, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 67, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "__init__") < 0)) __PYX_ERR(0, 70, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "__init__") < 0)) __PYX_ERR(0, 67, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -2802,7 +2923,7 @@ static int __pyx_pw_15elaina_triehard_6impl_c_8TrieHard_1__init__(PyObject *__py
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 70, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 67, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -2839,34 +2960,48 @@ static int __pyx_pf_15elaina_triehard_6impl_c_8TrieHard___init__(struct __pyx_ob
   unsigned char __pyx_v_unique_bytes_list[0x100];
   int __pyx_v_num_unique_bytes;
   int __pyx_v_byte_present[0x100];
+  PyObject *__pyx_v_e = NULL;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1[256];
   unsigned PY_LONG_LONG __pyx_t_2[256];
   Py_ssize_t __pyx_t_3;
   int __pyx_t_4;
-  int __pyx_t_5;
+  PyObject *__pyx_t_5 = NULL;
   int __pyx_t_6;
-  PyObject *__pyx_t_7 = NULL;
-  PyObject *__pyx_t_8 = NULL;
+  int __pyx_t_7;
+  int __pyx_t_8;
   PyObject *__pyx_t_9 = NULL;
-  unsigned int __pyx_t_10;
-  unsigned char *__pyx_t_11;
-  int __pyx_t_12;
-  int __pyx_t_13;
-  int __pyx_t_14;
-  int __pyx_t_15;
+  PyObject *__pyx_t_10 = NULL;
+  PyObject *__pyx_t_11 = NULL;
+  PyObject *__pyx_t_12 = NULL;
+  PyObject *__pyx_t_13 = NULL;
+  unsigned int __pyx_t_14;
+  unsigned char *__pyx_t_15;
+  int __pyx_t_16;
+  int __pyx_t_17;
+  int __pyx_t_18;
+  PyObject *__pyx_t_19 = NULL;
+  PyObject *__pyx_t_20 = NULL;
+  PyObject *__pyx_t_21 = NULL;
+  char const *__pyx_t_22;
+  PyObject *__pyx_t_23 = NULL;
+  PyObject *__pyx_t_24 = NULL;
+  PyObject *__pyx_t_25 = NULL;
+  PyObject *__pyx_t_26 = NULL;
+  PyObject *__pyx_t_27 = NULL;
+  PyObject *__pyx_t_28 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 1);
 
-  /* "elaina_triehard/impl_c.pyx":80
+  /* "elaina_triehard/impl_c.pyx":77
  *         cdef unsigned char[256] unique_bytes_list
  *         cdef int num_unique_bytes
  *         cdef int[256] byte_present = [0] * 256             # <<<<<<<<<<<<<<
  * 
- *         num_unique_bytes = 0
+ *         #
  */
   {
     Py_ssize_t __pyx_temp;
@@ -2876,12 +3011,66 @@ static int __pyx_pf_15elaina_triehard_6impl_c_8TrieHard___init__(struct __pyx_ob
   }
   if (unlikely((0x100) != (256))) {
     PyErr_Format(PyExc_ValueError, "Assignment to slice of wrong length, expected %" CYTHON_FORMAT_SSIZE_T "d, got %" CYTHON_FORMAT_SSIZE_T "d", (Py_ssize_t)(256), (Py_ssize_t)(0x100));
-    __PYX_ERR(0, 80, __pyx_L1_error)
+    __PYX_ERR(0, 77, __pyx_L1_error)
   }
   memcpy(&(__pyx_v_byte_present[0]), __pyx_t_1, sizeof(__pyx_v_byte_present[0]) * (256));
 
+  /* "elaina_triehard/impl_c.pyx":80
+ * 
+ *         #
+ *         self.nodes = NULL             # <<<<<<<<<<<<<<
+ *         self.num_nodes = 0
+ *         self.bytes_strings = NULL
+ */
+  __pyx_v_self->nodes = NULL;
+
+  /* "elaina_triehard/impl_c.pyx":81
+ *         #
+ *         self.nodes = NULL
+ *         self.num_nodes = 0             # <<<<<<<<<<<<<<
+ *         self.bytes_strings = NULL
+ *         self.bytes_lengths = NULL
+ */
+  __pyx_v_self->num_nodes = 0;
+
   /* "elaina_triehard/impl_c.pyx":82
- *         cdef int[256] byte_present = [0] * 256
+ *         self.nodes = NULL
+ *         self.num_nodes = 0
+ *         self.bytes_strings = NULL             # <<<<<<<<<<<<<<
+ *         self.bytes_lengths = NULL
+ *         self.num_strings = 0
+ */
+  __pyx_v_self->bytes_strings = NULL;
+
+  /* "elaina_triehard/impl_c.pyx":83
+ *         self.num_nodes = 0
+ *         self.bytes_strings = NULL
+ *         self.bytes_lengths = NULL             # <<<<<<<<<<<<<<
+ *         self.num_strings = 0
+ *         self.max_mask_bit = 0
+ */
+  __pyx_v_self->bytes_lengths = NULL;
+
+  /* "elaina_triehard/impl_c.pyx":84
+ *         self.bytes_strings = NULL
+ *         self.bytes_lengths = NULL
+ *         self.num_strings = 0             # <<<<<<<<<<<<<<
+ *         self.max_mask_bit = 0
+ * 
+ */
+  __pyx_v_self->num_strings = 0;
+
+  /* "elaina_triehard/impl_c.pyx":85
+ *         self.bytes_lengths = NULL
+ *         self.num_strings = 0
+ *         self.max_mask_bit = 0             # <<<<<<<<<<<<<<
+ * 
+ *         num_unique_bytes = 0
+ */
+  __pyx_v_self->max_mask_bit = 0;
+
+  /* "elaina_triehard/impl_c.pyx":87
+ *         self.max_mask_bit = 0
  * 
  *         num_unique_bytes = 0             # <<<<<<<<<<<<<<
  *         self.byte_to_mask = [0] * 256
@@ -2889,7 +3078,7 @@ static int __pyx_pf_15elaina_triehard_6impl_c_8TrieHard___init__(struct __pyx_ob
  */
   __pyx_v_num_unique_bytes = 0;
 
-  /* "elaina_triehard/impl_c.pyx":83
+  /* "elaina_triehard/impl_c.pyx":88
  * 
  *         num_unique_bytes = 0
  *         self.byte_to_mask = [0] * 256             # <<<<<<<<<<<<<<
@@ -2904,289 +3093,602 @@ static int __pyx_pf_15elaina_triehard_6impl_c_8TrieHard___init__(struct __pyx_ob
   }
   if (unlikely((0x100) != (256))) {
     PyErr_Format(PyExc_ValueError, "Assignment to slice of wrong length, expected %" CYTHON_FORMAT_SSIZE_T "d, got %" CYTHON_FORMAT_SSIZE_T "d", (Py_ssize_t)(256), (Py_ssize_t)(0x100));
-    __PYX_ERR(0, 83, __pyx_L1_error)
+    __PYX_ERR(0, 88, __pyx_L1_error)
   }
   memcpy(&(__pyx_v_self->byte_to_mask[0]), __pyx_t_2, sizeof(__pyx_v_self->byte_to_mask[0]) * (256));
 
-  /* "elaina_triehard/impl_c.pyx":85
+  /* "elaina_triehard/impl_c.pyx":90
  *         self.byte_to_mask = [0] * 256
  * 
  *         self.num_strings = len(strings)             # <<<<<<<<<<<<<<
- *         self.bytes_strings = <unsigned char**>malloc(self.num_strings * sizeof(unsigned char*))
- *         self.bytes_lengths = <int*>malloc(self.num_strings * sizeof(int))
+ *         if self.num_strings == 0:
+ *             return  #  Trie
  */
-  __pyx_t_3 = PyObject_Length(__pyx_v_strings); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 85, __pyx_L1_error)
+  __pyx_t_3 = PyObject_Length(__pyx_v_strings); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 90, __pyx_L1_error)
   __pyx_v_self->num_strings = __pyx_t_3;
 
-  /* "elaina_triehard/impl_c.pyx":86
+  /* "elaina_triehard/impl_c.pyx":91
  * 
  *         self.num_strings = len(strings)
- *         self.bytes_strings = <unsigned char**>malloc(self.num_strings * sizeof(unsigned char*))             # <<<<<<<<<<<<<<
- *         self.bytes_lengths = <int*>malloc(self.num_strings * sizeof(int))
+ *         if self.num_strings == 0:             # <<<<<<<<<<<<<<
+ *             return  #  Trie
  * 
+ */
+  __pyx_t_4 = (__pyx_v_self->num_strings == 0);
+  if (__pyx_t_4) {
+
+    /* "elaina_triehard/impl_c.pyx":92
+ *         self.num_strings = len(strings)
+ *         if self.num_strings == 0:
+ *             return  #  Trie             # <<<<<<<<<<<<<<
+ * 
+ *         self.bytes_strings = <unsigned char**>malloc(self.num_strings * sizeof(unsigned char*))
+ */
+    __pyx_r = 0;
+    goto __pyx_L0;
+
+    /* "elaina_triehard/impl_c.pyx":91
+ * 
+ *         self.num_strings = len(strings)
+ *         if self.num_strings == 0:             # <<<<<<<<<<<<<<
+ *             return  #  Trie
+ * 
+ */
+  }
+
+  /* "elaina_triehard/impl_c.pyx":94
+ *             return  #  Trie
+ * 
+ *         self.bytes_strings = <unsigned char**>malloc(self.num_strings * sizeof(unsigned char*))             # <<<<<<<<<<<<<<
+ *         if self.bytes_strings == NULL:
+ *             raise MemoryError("Failed to allocate memory for bytes_strings.")
  */
   __pyx_v_self->bytes_strings = ((unsigned char **)malloc((__pyx_v_self->num_strings * (sizeof(unsigned char *)))));
 
-  /* "elaina_triehard/impl_c.pyx":87
- *         self.num_strings = len(strings)
- *         self.bytes_strings = <unsigned char**>malloc(self.num_strings * sizeof(unsigned char*))
- *         self.bytes_lengths = <int*>malloc(self.num_strings * sizeof(int))             # <<<<<<<<<<<<<<
+  /* "elaina_triehard/impl_c.pyx":95
  * 
- *         for i in range(self.num_strings):
+ *         self.bytes_strings = <unsigned char**>malloc(self.num_strings * sizeof(unsigned char*))
+ *         if self.bytes_strings == NULL:             # <<<<<<<<<<<<<<
+ *             raise MemoryError("Failed to allocate memory for bytes_strings.")
+ * 
+ */
+  __pyx_t_4 = (__pyx_v_self->bytes_strings == NULL);
+  if (unlikely(__pyx_t_4)) {
+
+    /* "elaina_triehard/impl_c.pyx":96
+ *         self.bytes_strings = <unsigned char**>malloc(self.num_strings * sizeof(unsigned char*))
+ *         if self.bytes_strings == NULL:
+ *             raise MemoryError("Failed to allocate memory for bytes_strings.")             # <<<<<<<<<<<<<<
+ * 
+ *         self.bytes_lengths = <int*>malloc(self.num_strings * sizeof(int))
+ */
+    __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 96, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __Pyx_Raise(__pyx_t_5, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __PYX_ERR(0, 96, __pyx_L1_error)
+
+    /* "elaina_triehard/impl_c.pyx":95
+ * 
+ *         self.bytes_strings = <unsigned char**>malloc(self.num_strings * sizeof(unsigned char*))
+ *         if self.bytes_strings == NULL:             # <<<<<<<<<<<<<<
+ *             raise MemoryError("Failed to allocate memory for bytes_strings.")
+ * 
+ */
+  }
+
+  /* "elaina_triehard/impl_c.pyx":98
+ *             raise MemoryError("Failed to allocate memory for bytes_strings.")
+ * 
+ *         self.bytes_lengths = <int*>malloc(self.num_strings * sizeof(int))             # <<<<<<<<<<<<<<
+ *         if self.bytes_lengths == NULL:
+ *             free(self.bytes_strings)
  */
   __pyx_v_self->bytes_lengths = ((int *)malloc((__pyx_v_self->num_strings * (sizeof(int)))));
 
-  /* "elaina_triehard/impl_c.pyx":89
+  /* "elaina_triehard/impl_c.pyx":99
+ * 
  *         self.bytes_lengths = <int*>malloc(self.num_strings * sizeof(int))
- * 
- *         for i in range(self.num_strings):             # <<<<<<<<<<<<<<
- *             bs_py = strings[i].encode('utf-8')
- *             bs = <unsigned char*>bs_py
+ *         if self.bytes_lengths == NULL:             # <<<<<<<<<<<<<<
+ *             free(self.bytes_strings)
+ *             self.bytes_strings = NULL
  */
-  __pyx_t_4 = __pyx_v_self->num_strings;
-  __pyx_t_5 = __pyx_t_4;
-  for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
-    __pyx_v_i = __pyx_t_6;
+  __pyx_t_4 = (__pyx_v_self->bytes_lengths == NULL);
+  if (unlikely(__pyx_t_4)) {
 
-    /* "elaina_triehard/impl_c.pyx":90
- * 
- *         for i in range(self.num_strings):
- *             bs_py = strings[i].encode('utf-8')             # <<<<<<<<<<<<<<
- *             bs = <unsigned char*>bs_py
- *             length = len(bs_py)
+    /* "elaina_triehard/impl_c.pyx":100
+ *         self.bytes_lengths = <int*>malloc(self.num_strings * sizeof(int))
+ *         if self.bytes_lengths == NULL:
+ *             free(self.bytes_strings)             # <<<<<<<<<<<<<<
+ *             self.bytes_strings = NULL
+ *             raise MemoryError("Failed to allocate memory for bytes_lengths.")
  */
-    __pyx_t_8 = __Pyx_GetItemInt(__pyx_v_strings, __pyx_v_i, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 90, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_8, __pyx_n_s_encode); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 90, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_9);
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_t_8 = NULL;
-    __pyx_t_10 = 0;
-    #if CYTHON_UNPACK_METHODS
-    if (likely(PyMethod_Check(__pyx_t_9))) {
-      __pyx_t_8 = PyMethod_GET_SELF(__pyx_t_9);
-      if (likely(__pyx_t_8)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_9);
-        __Pyx_INCREF(__pyx_t_8);
-        __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_9, function);
-        __pyx_t_10 = 1;
-      }
-    }
-    #endif
-    {
-      PyObject *__pyx_callargs[2] = {__pyx_t_8, __pyx_kp_u_utf_8};
-      __pyx_t_7 = __Pyx_PyObject_FastCall(__pyx_t_9, __pyx_callargs+1-__pyx_t_10, 1+__pyx_t_10);
-      __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-      if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 90, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_7);
-      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-    }
-    if (!(likely(PyBytes_CheckExact(__pyx_t_7))||((__pyx_t_7) == Py_None) || __Pyx_RaiseUnexpectedTypeError("bytes", __pyx_t_7))) __PYX_ERR(0, 90, __pyx_L1_error)
-    __Pyx_XDECREF_SET(__pyx_v_bs_py, ((PyObject*)__pyx_t_7));
-    __pyx_t_7 = 0;
+    free(__pyx_v_self->bytes_strings);
 
-    /* "elaina_triehard/impl_c.pyx":91
- *         for i in range(self.num_strings):
- *             bs_py = strings[i].encode('utf-8')
- *             bs = <unsigned char*>bs_py             # <<<<<<<<<<<<<<
- *             length = len(bs_py)
- *             self.bytes_lengths[i] = length
- */
-    if (unlikely(__pyx_v_bs_py == Py_None)) {
-      PyErr_SetString(PyExc_TypeError, "expected bytes, NoneType found");
-      __PYX_ERR(0, 91, __pyx_L1_error)
-    }
-    __pyx_t_11 = __Pyx_PyBytes_AsWritableUString(__pyx_v_bs_py); if (unlikely((!__pyx_t_11) && PyErr_Occurred())) __PYX_ERR(0, 91, __pyx_L1_error)
-    __pyx_v_bs = ((unsigned char *)__pyx_t_11);
-
-    /* "elaina_triehard/impl_c.pyx":92
- *             bs_py = strings[i].encode('utf-8')
- *             bs = <unsigned char*>bs_py
- *             length = len(bs_py)             # <<<<<<<<<<<<<<
- *             self.bytes_lengths[i] = length
- *             self.bytes_strings[i] = <unsigned char*>PyMem_Malloc(length * sizeof(unsigned char))
- */
-    if (unlikely(__pyx_v_bs_py == Py_None)) {
-      PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 92, __pyx_L1_error)
-    }
-    __pyx_t_3 = __Pyx_PyBytes_GET_SIZE(__pyx_v_bs_py); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 92, __pyx_L1_error)
-    __pyx_v_length = __pyx_t_3;
-
-    /* "elaina_triehard/impl_c.pyx":93
- *             bs = <unsigned char*>bs_py
- *             length = len(bs_py)
- *             self.bytes_lengths[i] = length             # <<<<<<<<<<<<<<
- *             self.bytes_strings[i] = <unsigned char*>PyMem_Malloc(length * sizeof(unsigned char))
- *             memcpy(self.bytes_strings[i], bs, length * sizeof(unsigned char))
- */
-    (__pyx_v_self->bytes_lengths[__pyx_v_i]) = __pyx_v_length;
-
-    /* "elaina_triehard/impl_c.pyx":94
- *             length = len(bs_py)
- *             self.bytes_lengths[i] = length
- *             self.bytes_strings[i] = <unsigned char*>PyMem_Malloc(length * sizeof(unsigned char))             # <<<<<<<<<<<<<<
- *             memcpy(self.bytes_strings[i], bs, length * sizeof(unsigned char))
- *             for j in range(length):
- */
-    (__pyx_v_self->bytes_strings[__pyx_v_i]) = ((unsigned char *)PyMem_Malloc((__pyx_v_length * (sizeof(unsigned char)))));
-
-    /* "elaina_triehard/impl_c.pyx":95
- *             self.bytes_lengths[i] = length
- *             self.bytes_strings[i] = <unsigned char*>PyMem_Malloc(length * sizeof(unsigned char))
- *             memcpy(self.bytes_strings[i], bs, length * sizeof(unsigned char))             # <<<<<<<<<<<<<<
- *             for j in range(length):
- *                 b = bs[j]
- */
-    (void)(memcpy((__pyx_v_self->bytes_strings[__pyx_v_i]), __pyx_v_bs, (__pyx_v_length * (sizeof(unsigned char)))));
-
-    /* "elaina_triehard/impl_c.pyx":96
- *             self.bytes_strings[i] = <unsigned char*>PyMem_Malloc(length * sizeof(unsigned char))
- *             memcpy(self.bytes_strings[i], bs, length * sizeof(unsigned char))
- *             for j in range(length):             # <<<<<<<<<<<<<<
- *                 b = bs[j]
- *                 if byte_present[b] == 0:
- */
-    __pyx_t_12 = __pyx_v_length;
-    __pyx_t_13 = __pyx_t_12;
-    for (__pyx_t_14 = 0; __pyx_t_14 < __pyx_t_13; __pyx_t_14+=1) {
-      __pyx_v_j = __pyx_t_14;
-
-      /* "elaina_triehard/impl_c.pyx":97
- *             memcpy(self.bytes_strings[i], bs, length * sizeof(unsigned char))
- *             for j in range(length):
- *                 b = bs[j]             # <<<<<<<<<<<<<<
- *                 if byte_present[b] == 0:
- *                     byte_present[b] = 1
- */
-      __pyx_v_b = (__pyx_v_bs[__pyx_v_j]);
-
-      /* "elaina_triehard/impl_c.pyx":98
- *             for j in range(length):
- *                 b = bs[j]
- *                 if byte_present[b] == 0:             # <<<<<<<<<<<<<<
- *                     byte_present[b] = 1
- *                     unique_bytes_list[num_unique_bytes] = b
- */
-      __pyx_t_15 = ((__pyx_v_byte_present[__pyx_v_b]) == 0);
-      if (__pyx_t_15) {
-
-        /* "elaina_triehard/impl_c.pyx":99
- *                 b = bs[j]
- *                 if byte_present[b] == 0:
- *                     byte_present[b] = 1             # <<<<<<<<<<<<<<
- *                     unique_bytes_list[num_unique_bytes] = b
- *                     num_unique_bytes += 1
- */
-        (__pyx_v_byte_present[__pyx_v_b]) = 1;
-
-        /* "elaina_triehard/impl_c.pyx":100
- *                 if byte_present[b] == 0:
- *                     byte_present[b] = 1
- *                     unique_bytes_list[num_unique_bytes] = b             # <<<<<<<<<<<<<<
- *                     num_unique_bytes += 1
+    /* "elaina_triehard/impl_c.pyx":101
+ *         if self.bytes_lengths == NULL:
+ *             free(self.bytes_strings)
+ *             self.bytes_strings = NULL             # <<<<<<<<<<<<<<
+ *             raise MemoryError("Failed to allocate memory for bytes_lengths.")
  * 
  */
-        (__pyx_v_unique_bytes_list[__pyx_v_num_unique_bytes]) = __pyx_v_b;
+    __pyx_v_self->bytes_strings = NULL;
 
-        /* "elaina_triehard/impl_c.pyx":101
- *                     byte_present[b] = 1
- *                     unique_bytes_list[num_unique_bytes] = b
- *                     num_unique_bytes += 1             # <<<<<<<<<<<<<<
+    /* "elaina_triehard/impl_c.pyx":102
+ *             free(self.bytes_strings)
+ *             self.bytes_strings = NULL
+ *             raise MemoryError("Failed to allocate memory for bytes_lengths.")             # <<<<<<<<<<<<<<
  * 
- *         #  qsort  unique_bytes_list
+ *         #  NULL
  */
-        __pyx_v_num_unique_bytes = (__pyx_v_num_unique_bytes + 1);
+    __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 102, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __Pyx_Raise(__pyx_t_5, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __PYX_ERR(0, 102, __pyx_L1_error)
 
-        /* "elaina_triehard/impl_c.pyx":98
- *             for j in range(length):
- *                 b = bs[j]
- *                 if byte_present[b] == 0:             # <<<<<<<<<<<<<<
- *                     byte_present[b] = 1
- *                     unique_bytes_list[num_unique_bytes] = b
+    /* "elaina_triehard/impl_c.pyx":99
+ * 
+ *         self.bytes_lengths = <int*>malloc(self.num_strings * sizeof(int))
+ *         if self.bytes_lengths == NULL:             # <<<<<<<<<<<<<<
+ *             free(self.bytes_strings)
+ *             self.bytes_strings = NULL
  */
-      }
-    }
   }
 
-  /* "elaina_triehard/impl_c.pyx":104
+  /* "elaina_triehard/impl_c.pyx":105
  * 
- *         #  qsort  unique_bytes_list
- *         qsort(unique_bytes_list, num_unique_bytes, sizeof(unsigned char), compare_unsigned_char)             # <<<<<<<<<<<<<<
+ *         #  NULL
+ *         for i in range(self.num_strings):             # <<<<<<<<<<<<<<
+ *             self.bytes_strings[i] = NULL
  * 
- *         #
  */
-  qsort(__pyx_v_unique_bytes_list, __pyx_v_num_unique_bytes, (sizeof(unsigned char)), __pyx_f_15elaina_triehard_6impl_c_compare_unsigned_char);
+  __pyx_t_6 = __pyx_v_self->num_strings;
+  __pyx_t_7 = __pyx_t_6;
+  for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
+    __pyx_v_i = __pyx_t_8;
 
-  /* "elaina_triehard/impl_c.pyx":107
+    /* "elaina_triehard/impl_c.pyx":106
+ *         #  NULL
+ *         for i in range(self.num_strings):
+ *             self.bytes_strings[i] = NULL             # <<<<<<<<<<<<<<
  * 
- *         #
- *         self.max_mask_bit = 0             # <<<<<<<<<<<<<<
- *         for i in range(num_unique_bytes):
- *             b = unique_bytes_list[i]
+ *         try:
  */
-  __pyx_v_self->max_mask_bit = 0;
+    (__pyx_v_self->bytes_strings[__pyx_v_i]) = NULL;
+  }
 
   /* "elaina_triehard/impl_c.pyx":108
- *         #
- *         self.max_mask_bit = 0
- *         for i in range(num_unique_bytes):             # <<<<<<<<<<<<<<
- *             b = unique_bytes_list[i]
- *             self.byte_to_mask[b] = 1 << self.max_mask_bit
+ *             self.bytes_strings[i] = NULL
+ * 
+ *         try:             # <<<<<<<<<<<<<<
+ *             for i in range(self.num_strings):
+ *                 bs_py = strings[i].encode('utf-8')
  */
-  __pyx_t_4 = __pyx_v_num_unique_bytes;
-  __pyx_t_5 = __pyx_t_4;
-  for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
-    __pyx_v_i = __pyx_t_6;
+  {
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    __Pyx_ExceptionSave(&__pyx_t_9, &__pyx_t_10, &__pyx_t_11);
+    __Pyx_XGOTREF(__pyx_t_9);
+    __Pyx_XGOTREF(__pyx_t_10);
+    __Pyx_XGOTREF(__pyx_t_11);
+    /*try:*/ {
 
-    /* "elaina_triehard/impl_c.pyx":109
- *         self.max_mask_bit = 0
- *         for i in range(num_unique_bytes):
- *             b = unique_bytes_list[i]             # <<<<<<<<<<<<<<
- *             self.byte_to_mask[b] = 1 << self.max_mask_bit
- *             self.max_mask_bit += 1
+      /* "elaina_triehard/impl_c.pyx":109
+ * 
+ *         try:
+ *             for i in range(self.num_strings):             # <<<<<<<<<<<<<<
+ *                 bs_py = strings[i].encode('utf-8')
+ *                 bs = <unsigned char*>bs_py
  */
-    __pyx_v_b = (__pyx_v_unique_bytes_list[__pyx_v_i]);
+      __pyx_t_6 = __pyx_v_self->num_strings;
+      __pyx_t_7 = __pyx_t_6;
+      for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
+        __pyx_v_i = __pyx_t_8;
 
-    /* "elaina_triehard/impl_c.pyx":110
- *         for i in range(num_unique_bytes):
- *             b = unique_bytes_list[i]
- *             self.byte_to_mask[b] = 1 << self.max_mask_bit             # <<<<<<<<<<<<<<
- *             self.max_mask_bit += 1
+        /* "elaina_triehard/impl_c.pyx":110
+ *         try:
+ *             for i in range(self.num_strings):
+ *                 bs_py = strings[i].encode('utf-8')             # <<<<<<<<<<<<<<
+ *                 bs = <unsigned char*>bs_py
+ *                 length = len(bs_py)
+ */
+        __pyx_t_12 = __Pyx_GetItemInt(__pyx_v_strings, __pyx_v_i, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 110, __pyx_L8_error)
+        __Pyx_GOTREF(__pyx_t_12);
+        __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_t_12, __pyx_n_s_encode); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 110, __pyx_L8_error)
+        __Pyx_GOTREF(__pyx_t_13);
+        __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+        __pyx_t_12 = NULL;
+        __pyx_t_14 = 0;
+        #if CYTHON_UNPACK_METHODS
+        if (likely(PyMethod_Check(__pyx_t_13))) {
+          __pyx_t_12 = PyMethod_GET_SELF(__pyx_t_13);
+          if (likely(__pyx_t_12)) {
+            PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_13);
+            __Pyx_INCREF(__pyx_t_12);
+            __Pyx_INCREF(function);
+            __Pyx_DECREF_SET(__pyx_t_13, function);
+            __pyx_t_14 = 1;
+          }
+        }
+        #endif
+        {
+          PyObject *__pyx_callargs[2] = {__pyx_t_12, __pyx_kp_u_utf_8};
+          __pyx_t_5 = __Pyx_PyObject_FastCall(__pyx_t_13, __pyx_callargs+1-__pyx_t_14, 1+__pyx_t_14);
+          __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
+          if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 110, __pyx_L8_error)
+          __Pyx_GOTREF(__pyx_t_5);
+          __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+        }
+        if (!(likely(PyBytes_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None) || __Pyx_RaiseUnexpectedTypeError("bytes", __pyx_t_5))) __PYX_ERR(0, 110, __pyx_L8_error)
+        __Pyx_XDECREF_SET(__pyx_v_bs_py, ((PyObject*)__pyx_t_5));
+        __pyx_t_5 = 0;
+
+        /* "elaina_triehard/impl_c.pyx":111
+ *             for i in range(self.num_strings):
+ *                 bs_py = strings[i].encode('utf-8')
+ *                 bs = <unsigned char*>bs_py             # <<<<<<<<<<<<<<
+ *                 length = len(bs_py)
+ *                 self.bytes_lengths[i] = length
+ */
+        if (unlikely(__pyx_v_bs_py == Py_None)) {
+          PyErr_SetString(PyExc_TypeError, "expected bytes, NoneType found");
+          __PYX_ERR(0, 111, __pyx_L8_error)
+        }
+        __pyx_t_15 = __Pyx_PyBytes_AsWritableUString(__pyx_v_bs_py); if (unlikely((!__pyx_t_15) && PyErr_Occurred())) __PYX_ERR(0, 111, __pyx_L8_error)
+        __pyx_v_bs = ((unsigned char *)__pyx_t_15);
+
+        /* "elaina_triehard/impl_c.pyx":112
+ *                 bs_py = strings[i].encode('utf-8')
+ *                 bs = <unsigned char*>bs_py
+ *                 length = len(bs_py)             # <<<<<<<<<<<<<<
+ *                 self.bytes_lengths[i] = length
+ *                 self.bytes_strings[i] = <unsigned char*>PyMem_Malloc(length * sizeof(unsigned char))
+ */
+        if (unlikely(__pyx_v_bs_py == Py_None)) {
+          PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
+          __PYX_ERR(0, 112, __pyx_L8_error)
+        }
+        __pyx_t_3 = __Pyx_PyBytes_GET_SIZE(__pyx_v_bs_py); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 112, __pyx_L8_error)
+        __pyx_v_length = __pyx_t_3;
+
+        /* "elaina_triehard/impl_c.pyx":113
+ *                 bs = <unsigned char*>bs_py
+ *                 length = len(bs_py)
+ *                 self.bytes_lengths[i] = length             # <<<<<<<<<<<<<<
+ *                 self.bytes_strings[i] = <unsigned char*>PyMem_Malloc(length * sizeof(unsigned char))
+ *                 if self.bytes_strings[i] == NULL:
+ */
+        (__pyx_v_self->bytes_lengths[__pyx_v_i]) = __pyx_v_length;
+
+        /* "elaina_triehard/impl_c.pyx":114
+ *                 length = len(bs_py)
+ *                 self.bytes_lengths[i] = length
+ *                 self.bytes_strings[i] = <unsigned char*>PyMem_Malloc(length * sizeof(unsigned char))             # <<<<<<<<<<<<<<
+ *                 if self.bytes_strings[i] == NULL:
+ *                     raise MemoryError("Failed to allocate memory for bytes_strings[i].")
+ */
+        (__pyx_v_self->bytes_strings[__pyx_v_i]) = ((unsigned char *)PyMem_Malloc((__pyx_v_length * (sizeof(unsigned char)))));
+
+        /* "elaina_triehard/impl_c.pyx":115
+ *                 self.bytes_lengths[i] = length
+ *                 self.bytes_strings[i] = <unsigned char*>PyMem_Malloc(length * sizeof(unsigned char))
+ *                 if self.bytes_strings[i] == NULL:             # <<<<<<<<<<<<<<
+ *                     raise MemoryError("Failed to allocate memory for bytes_strings[i].")
+ *                 memcpy(self.bytes_strings[i], bs, length * sizeof(unsigned char))
+ */
+        __pyx_t_4 = ((__pyx_v_self->bytes_strings[__pyx_v_i]) == NULL);
+        if (unlikely(__pyx_t_4)) {
+
+          /* "elaina_triehard/impl_c.pyx":116
+ *                 self.bytes_strings[i] = <unsigned char*>PyMem_Malloc(length * sizeof(unsigned char))
+ *                 if self.bytes_strings[i] == NULL:
+ *                     raise MemoryError("Failed to allocate memory for bytes_strings[i].")             # <<<<<<<<<<<<<<
+ *                 memcpy(self.bytes_strings[i], bs, length * sizeof(unsigned char))
+ *                 for j in range(length):
+ */
+          __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 116, __pyx_L8_error)
+          __Pyx_GOTREF(__pyx_t_5);
+          __Pyx_Raise(__pyx_t_5, 0, 0, 0);
+          __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+          __PYX_ERR(0, 116, __pyx_L8_error)
+
+          /* "elaina_triehard/impl_c.pyx":115
+ *                 self.bytes_lengths[i] = length
+ *                 self.bytes_strings[i] = <unsigned char*>PyMem_Malloc(length * sizeof(unsigned char))
+ *                 if self.bytes_strings[i] == NULL:             # <<<<<<<<<<<<<<
+ *                     raise MemoryError("Failed to allocate memory for bytes_strings[i].")
+ *                 memcpy(self.bytes_strings[i], bs, length * sizeof(unsigned char))
+ */
+        }
+
+        /* "elaina_triehard/impl_c.pyx":117
+ *                 if self.bytes_strings[i] == NULL:
+ *                     raise MemoryError("Failed to allocate memory for bytes_strings[i].")
+ *                 memcpy(self.bytes_strings[i], bs, length * sizeof(unsigned char))             # <<<<<<<<<<<<<<
+ *                 for j in range(length):
+ *                     b = bs[j]
+ */
+        (void)(memcpy((__pyx_v_self->bytes_strings[__pyx_v_i]), __pyx_v_bs, (__pyx_v_length * (sizeof(unsigned char)))));
+
+        /* "elaina_triehard/impl_c.pyx":118
+ *                     raise MemoryError("Failed to allocate memory for bytes_strings[i].")
+ *                 memcpy(self.bytes_strings[i], bs, length * sizeof(unsigned char))
+ *                 for j in range(length):             # <<<<<<<<<<<<<<
+ *                     b = bs[j]
+ *                     if byte_present[b] == 0:
+ */
+        __pyx_t_16 = __pyx_v_length;
+        __pyx_t_17 = __pyx_t_16;
+        for (__pyx_t_18 = 0; __pyx_t_18 < __pyx_t_17; __pyx_t_18+=1) {
+          __pyx_v_j = __pyx_t_18;
+
+          /* "elaina_triehard/impl_c.pyx":119
+ *                 memcpy(self.bytes_strings[i], bs, length * sizeof(unsigned char))
+ *                 for j in range(length):
+ *                     b = bs[j]             # <<<<<<<<<<<<<<
+ *                     if byte_present[b] == 0:
+ *                         byte_present[b] = 1
+ */
+          __pyx_v_b = (__pyx_v_bs[__pyx_v_j]);
+
+          /* "elaina_triehard/impl_c.pyx":120
+ *                 for j in range(length):
+ *                     b = bs[j]
+ *                     if byte_present[b] == 0:             # <<<<<<<<<<<<<<
+ *                         byte_present[b] = 1
+ *                         unique_bytes_list[num_unique_bytes] = b
+ */
+          __pyx_t_4 = ((__pyx_v_byte_present[__pyx_v_b]) == 0);
+          if (__pyx_t_4) {
+
+            /* "elaina_triehard/impl_c.pyx":121
+ *                     b = bs[j]
+ *                     if byte_present[b] == 0:
+ *                         byte_present[b] = 1             # <<<<<<<<<<<<<<
+ *                         unique_bytes_list[num_unique_bytes] = b
+ *                         num_unique_bytes += 1
+ */
+            (__pyx_v_byte_present[__pyx_v_b]) = 1;
+
+            /* "elaina_triehard/impl_c.pyx":122
+ *                     if byte_present[b] == 0:
+ *                         byte_present[b] = 1
+ *                         unique_bytes_list[num_unique_bytes] = b             # <<<<<<<<<<<<<<
+ *                         num_unique_bytes += 1
  * 
  */
-    (__pyx_v_self->byte_to_mask[__pyx_v_b]) = (1 << __pyx_v_self->max_mask_bit);
+            (__pyx_v_unique_bytes_list[__pyx_v_num_unique_bytes]) = __pyx_v_b;
 
-    /* "elaina_triehard/impl_c.pyx":111
- *             b = unique_bytes_list[i]
- *             self.byte_to_mask[b] = 1 << self.max_mask_bit
- *             self.max_mask_bit += 1             # <<<<<<<<<<<<<<
+            /* "elaina_triehard/impl_c.pyx":123
+ *                         byte_present[b] = 1
+ *                         unique_bytes_list[num_unique_bytes] = b
+ *                         num_unique_bytes += 1             # <<<<<<<<<<<<<<
  * 
- *         #  Trie
+ *             #  qsort  unique_bytes_list
  */
-    __pyx_v_self->max_mask_bit = (__pyx_v_self->max_mask_bit + 1);
-  }
+            __pyx_v_num_unique_bytes = (__pyx_v_num_unique_bytes + 1);
 
-  /* "elaina_triehard/impl_c.pyx":114
+            /* "elaina_triehard/impl_c.pyx":120
+ *                 for j in range(length):
+ *                     b = bs[j]
+ *                     if byte_present[b] == 0:             # <<<<<<<<<<<<<<
+ *                         byte_present[b] = 1
+ *                         unique_bytes_list[num_unique_bytes] = b
+ */
+          }
+        }
+      }
+
+      /* "elaina_triehard/impl_c.pyx":126
  * 
- *         #  Trie
- *         self.nodes = NULL             # <<<<<<<<<<<<<<
- *         self._build_trie()
+ *             #  qsort  unique_bytes_list
+ *             qsort(unique_bytes_list, num_unique_bytes, sizeof(unsigned char), compare_unsigned_char)             # <<<<<<<<<<<<<<
+ * 
+ *             #
+ */
+      qsort(__pyx_v_unique_bytes_list, __pyx_v_num_unique_bytes, (sizeof(unsigned char)), __pyx_f_15elaina_triehard_6impl_c_compare_unsigned_char);
+
+      /* "elaina_triehard/impl_c.pyx":129
+ * 
+ *             #
+ *             self.max_mask_bit = 0             # <<<<<<<<<<<<<<
+ *             for i in range(num_unique_bytes):
+ *                 b = unique_bytes_list[i]
+ */
+      __pyx_v_self->max_mask_bit = 0;
+
+      /* "elaina_triehard/impl_c.pyx":130
+ *             #
+ *             self.max_mask_bit = 0
+ *             for i in range(num_unique_bytes):             # <<<<<<<<<<<<<<
+ *                 b = unique_bytes_list[i]
+ *                 self.byte_to_mask[b] = 1 << self.max_mask_bit
+ */
+      __pyx_t_6 = __pyx_v_num_unique_bytes;
+      __pyx_t_7 = __pyx_t_6;
+      for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
+        __pyx_v_i = __pyx_t_8;
+
+        /* "elaina_triehard/impl_c.pyx":131
+ *             self.max_mask_bit = 0
+ *             for i in range(num_unique_bytes):
+ *                 b = unique_bytes_list[i]             # <<<<<<<<<<<<<<
+ *                 self.byte_to_mask[b] = 1 << self.max_mask_bit
+ *                 self.max_mask_bit += 1
+ */
+        __pyx_v_b = (__pyx_v_unique_bytes_list[__pyx_v_i]);
+
+        /* "elaina_triehard/impl_c.pyx":132
+ *             for i in range(num_unique_bytes):
+ *                 b = unique_bytes_list[i]
+ *                 self.byte_to_mask[b] = 1 << self.max_mask_bit             # <<<<<<<<<<<<<<
+ *                 self.max_mask_bit += 1
  * 
  */
-  __pyx_v_self->nodes = NULL;
+        (__pyx_v_self->byte_to_mask[__pyx_v_b]) = (1 << __pyx_v_self->max_mask_bit);
 
-  /* "elaina_triehard/impl_c.pyx":115
- *         #  Trie
- *         self.nodes = NULL
- *         self._build_trie()             # <<<<<<<<<<<<<<
+        /* "elaina_triehard/impl_c.pyx":133
+ *                 b = unique_bytes_list[i]
+ *                 self.byte_to_mask[b] = 1 << self.max_mask_bit
+ *                 self.max_mask_bit += 1             # <<<<<<<<<<<<<<
+ * 
+ *             #  Trie
+ */
+        __pyx_v_self->max_mask_bit = (__pyx_v_self->max_mask_bit + 1);
+      }
+
+      /* "elaina_triehard/impl_c.pyx":136
+ * 
+ *             #  Trie
+ *             self._build_trie()             # <<<<<<<<<<<<<<
+ *         except Exception as e:
+ *             self.__dealloc__()
+ */
+      ((struct __pyx_vtabstruct_15elaina_triehard_6impl_c_TrieHard *)__pyx_v_self->__pyx_vtab)->_build_trie(__pyx_v_self); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 136, __pyx_L8_error)
+
+      /* "elaina_triehard/impl_c.pyx":108
+ *             self.bytes_strings[i] = NULL
+ * 
+ *         try:             # <<<<<<<<<<<<<<
+ *             for i in range(self.num_strings):
+ *                 bs_py = strings[i].encode('utf-8')
+ */
+    }
+    __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
+    __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
+    __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
+    goto __pyx_L13_try_end;
+    __pyx_L8_error:;
+    __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
+    __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+
+    /* "elaina_triehard/impl_c.pyx":137
+ *             #  Trie
+ *             self._build_trie()
+ *         except Exception as e:             # <<<<<<<<<<<<<<
+ *             self.__dealloc__()
+ *             raise e
+ */
+    __pyx_t_6 = __Pyx_PyErr_ExceptionMatches(((PyObject *)(&((PyTypeObject*)PyExc_Exception)[0])));
+    if (__pyx_t_6) {
+      __Pyx_AddTraceback("elaina_triehard.impl_c.TrieHard.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+      if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_13, &__pyx_t_12) < 0) __PYX_ERR(0, 137, __pyx_L10_except_error)
+      __Pyx_XGOTREF(__pyx_t_5);
+      __Pyx_XGOTREF(__pyx_t_13);
+      __Pyx_XGOTREF(__pyx_t_12);
+      __Pyx_INCREF(__pyx_t_13);
+      __pyx_v_e = __pyx_t_13;
+      /*try:*/ {
+
+        /* "elaina_triehard/impl_c.pyx":138
+ *             self._build_trie()
+ *         except Exception as e:
+ *             self.__dealloc__()             # <<<<<<<<<<<<<<
+ *             raise e
+ * 
+ */
+        __pyx_t_20 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_dealloc); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 138, __pyx_L27_error)
+        __Pyx_GOTREF(__pyx_t_20);
+        __pyx_t_21 = NULL;
+        __pyx_t_14 = 0;
+        #if CYTHON_UNPACK_METHODS
+        if (likely(PyMethod_Check(__pyx_t_20))) {
+          __pyx_t_21 = PyMethod_GET_SELF(__pyx_t_20);
+          if (likely(__pyx_t_21)) {
+            PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_20);
+            __Pyx_INCREF(__pyx_t_21);
+            __Pyx_INCREF(function);
+            __Pyx_DECREF_SET(__pyx_t_20, function);
+            __pyx_t_14 = 1;
+          }
+        }
+        #endif
+        {
+          PyObject *__pyx_callargs[2] = {__pyx_t_21, NULL};
+          __pyx_t_19 = __Pyx_PyObject_FastCall(__pyx_t_20, __pyx_callargs+1-__pyx_t_14, 0+__pyx_t_14);
+          __Pyx_XDECREF(__pyx_t_21); __pyx_t_21 = 0;
+          if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 138, __pyx_L27_error)
+          __Pyx_GOTREF(__pyx_t_19);
+          __Pyx_DECREF(__pyx_t_20); __pyx_t_20 = 0;
+        }
+        __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
+
+        /* "elaina_triehard/impl_c.pyx":139
+ *         except Exception as e:
+ *             self.__dealloc__()
+ *             raise e             # <<<<<<<<<<<<<<
  * 
  *     cdef void _build_trie(self):
  */
-  ((struct __pyx_vtabstruct_15elaina_triehard_6impl_c_TrieHard *)__pyx_v_self->__pyx_vtab)->_build_trie(__pyx_v_self); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 115, __pyx_L1_error)
+        __Pyx_Raise(__pyx_v_e, 0, 0, 0);
+        __PYX_ERR(0, 139, __pyx_L27_error)
+      }
 
-  /* "elaina_triehard/impl_c.pyx":70
+      /* "elaina_triehard/impl_c.pyx":137
+ *             #  Trie
+ *             self._build_trie()
+ *         except Exception as e:             # <<<<<<<<<<<<<<
+ *             self.__dealloc__()
+ *             raise e
+ */
+      /*finally:*/ {
+        __pyx_L27_error:;
+        /*exception exit:*/{
+          __Pyx_PyThreadState_declare
+          __Pyx_PyThreadState_assign
+          __pyx_t_23 = 0; __pyx_t_24 = 0; __pyx_t_25 = 0; __pyx_t_26 = 0; __pyx_t_27 = 0; __pyx_t_28 = 0;
+          __Pyx_XDECREF(__pyx_t_19); __pyx_t_19 = 0;
+          __Pyx_XDECREF(__pyx_t_20); __pyx_t_20 = 0;
+          __Pyx_XDECREF(__pyx_t_21); __pyx_t_21 = 0;
+          if (PY_MAJOR_VERSION >= 3) __Pyx_ExceptionSwap(&__pyx_t_26, &__pyx_t_27, &__pyx_t_28);
+          if ((PY_MAJOR_VERSION < 3) || unlikely(__Pyx_GetException(&__pyx_t_23, &__pyx_t_24, &__pyx_t_25) < 0)) __Pyx_ErrFetch(&__pyx_t_23, &__pyx_t_24, &__pyx_t_25);
+          __Pyx_XGOTREF(__pyx_t_23);
+          __Pyx_XGOTREF(__pyx_t_24);
+          __Pyx_XGOTREF(__pyx_t_25);
+          __Pyx_XGOTREF(__pyx_t_26);
+          __Pyx_XGOTREF(__pyx_t_27);
+          __Pyx_XGOTREF(__pyx_t_28);
+          __pyx_t_6 = __pyx_lineno; __pyx_t_7 = __pyx_clineno; __pyx_t_22 = __pyx_filename;
+          {
+            __Pyx_DECREF(__pyx_v_e); __pyx_v_e = 0;
+          }
+          if (PY_MAJOR_VERSION >= 3) {
+            __Pyx_XGIVEREF(__pyx_t_26);
+            __Pyx_XGIVEREF(__pyx_t_27);
+            __Pyx_XGIVEREF(__pyx_t_28);
+            __Pyx_ExceptionReset(__pyx_t_26, __pyx_t_27, __pyx_t_28);
+          }
+          __Pyx_XGIVEREF(__pyx_t_23);
+          __Pyx_XGIVEREF(__pyx_t_24);
+          __Pyx_XGIVEREF(__pyx_t_25);
+          __Pyx_ErrRestore(__pyx_t_23, __pyx_t_24, __pyx_t_25);
+          __pyx_t_23 = 0; __pyx_t_24 = 0; __pyx_t_25 = 0; __pyx_t_26 = 0; __pyx_t_27 = 0; __pyx_t_28 = 0;
+          __pyx_lineno = __pyx_t_6; __pyx_clineno = __pyx_t_7; __pyx_filename = __pyx_t_22;
+          goto __pyx_L10_except_error;
+        }
+      }
+    }
+    goto __pyx_L10_except_error;
+
+    /* "elaina_triehard/impl_c.pyx":108
+ *             self.bytes_strings[i] = NULL
+ * 
+ *         try:             # <<<<<<<<<<<<<<
+ *             for i in range(self.num_strings):
+ *                 bs_py = strings[i].encode('utf-8')
+ */
+    __pyx_L10_except_error:;
+    __Pyx_XGIVEREF(__pyx_t_9);
+    __Pyx_XGIVEREF(__pyx_t_10);
+    __Pyx_XGIVEREF(__pyx_t_11);
+    __Pyx_ExceptionReset(__pyx_t_9, __pyx_t_10, __pyx_t_11);
+    goto __pyx_L1_error;
+    __pyx_L13_try_end:;
+  }
+
+  /* "elaina_triehard/impl_c.pyx":67
  *     cdef int max_mask_bit
  * 
  *     def __init__(self, strings):             # <<<<<<<<<<<<<<
@@ -3198,19 +3700,23 @@ static int __pyx_pf_15elaina_triehard_6impl_c_8TrieHard___init__(struct __pyx_ob
   __pyx_r = 0;
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_7);
-  __Pyx_XDECREF(__pyx_t_8);
-  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_12);
+  __Pyx_XDECREF(__pyx_t_13);
+  __Pyx_XDECREF(__pyx_t_19);
+  __Pyx_XDECREF(__pyx_t_20);
+  __Pyx_XDECREF(__pyx_t_21);
   __Pyx_AddTraceback("elaina_triehard.impl_c.TrieHard.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_bs_py);
+  __Pyx_XDECREF(__pyx_v_e);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "elaina_triehard/impl_c.pyx":117
- *         self._build_trie()
+/* "elaina_triehard/impl_c.pyx":141
+ *             raise e
  * 
  *     cdef void _build_trie(self):             # <<<<<<<<<<<<<<
  *         """
@@ -3218,30 +3724,66 @@ static int __pyx_pf_15elaina_triehard_6impl_c_8TrieHard___init__(struct __pyx_ob
  */
 
 static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_trie(struct __pyx_obj_15elaina_triehard_6impl_c_TrieHard *__pyx_v_self) {
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("_build_trie", 1);
 
-  /* "elaina_triehard/impl_c.pyx":122
+  /* "elaina_triehard/impl_c.pyx":146
  *         """
  *         cdef int i
  *         self.num_nodes = 1             # <<<<<<<<<<<<<<
  *         self.nodes = <TrieHardNode*>malloc(self.num_nodes * sizeof(TrieHardNode))
- *         #
+ *         if self.nodes == NULL:
  */
   __pyx_v_self->num_nodes = 1;
 
-  /* "elaina_triehard/impl_c.pyx":123
+  /* "elaina_triehard/impl_c.pyx":147
  *         cdef int i
  *         self.num_nodes = 1
  *         self.nodes = <TrieHardNode*>malloc(self.num_nodes * sizeof(TrieHardNode))             # <<<<<<<<<<<<<<
- *         #
- *         self.nodes[0].mask = 0
+ *         if self.nodes == NULL:
+ *             raise MemoryError("Failed to allocate memory for nodes.")
  */
   __pyx_v_self->nodes = ((struct __pyx_t_15elaina_triehard_6impl_c_TrieHardNode *)malloc((__pyx_v_self->num_nodes * (sizeof(struct __pyx_t_15elaina_triehard_6impl_c_TrieHardNode)))));
 
-  /* "elaina_triehard/impl_c.pyx":125
+  /* "elaina_triehard/impl_c.pyx":148
+ *         self.num_nodes = 1
  *         self.nodes = <TrieHardNode*>malloc(self.num_nodes * sizeof(TrieHardNode))
+ *         if self.nodes == NULL:             # <<<<<<<<<<<<<<
+ *             raise MemoryError("Failed to allocate memory for nodes.")
+ *         #
+ */
+  __pyx_t_1 = (__pyx_v_self->nodes == NULL);
+  if (unlikely(__pyx_t_1)) {
+
+    /* "elaina_triehard/impl_c.pyx":149
+ *         self.nodes = <TrieHardNode*>malloc(self.num_nodes * sizeof(TrieHardNode))
+ *         if self.nodes == NULL:
+ *             raise MemoryError("Failed to allocate memory for nodes.")             # <<<<<<<<<<<<<<
+ *         #
+ *         self.nodes[0].mask = 0
+ */
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 149, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_Raise(__pyx_t_2, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __PYX_ERR(0, 149, __pyx_L1_error)
+
+    /* "elaina_triehard/impl_c.pyx":148
+ *         self.num_nodes = 1
+ *         self.nodes = <TrieHardNode*>malloc(self.num_nodes * sizeof(TrieHardNode))
+ *         if self.nodes == NULL:             # <<<<<<<<<<<<<<
+ *             raise MemoryError("Failed to allocate memory for nodes.")
+ *         #
+ */
+  }
+
+  /* "elaina_triehard/impl_c.pyx":151
+ *             raise MemoryError("Failed to allocate memory for nodes.")
  *         #
  *         self.nodes[0].mask = 0             # <<<<<<<<<<<<<<
  *         self.nodes[0].children_indices = NULL
@@ -3249,7 +3791,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_trie(struct __pyx
  */
   (__pyx_v_self->nodes[0]).mask = 0;
 
-  /* "elaina_triehard/impl_c.pyx":126
+  /* "elaina_triehard/impl_c.pyx":152
  *         #
  *         self.nodes[0].mask = 0
  *         self.nodes[0].children_indices = NULL             # <<<<<<<<<<<<<<
@@ -3258,7 +3800,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_trie(struct __pyx
  */
   (__pyx_v_self->nodes[0]).children_indices = NULL;
 
-  /* "elaina_triehard/impl_c.pyx":127
+  /* "elaina_triehard/impl_c.pyx":153
  *         self.nodes[0].mask = 0
  *         self.nodes[0].children_indices = NULL
  *         self.nodes[0].num_children = 0             # <<<<<<<<<<<<<<
@@ -3267,7 +3809,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_trie(struct __pyx
  */
   (__pyx_v_self->nodes[0]).num_children = 0;
 
-  /* "elaina_triehard/impl_c.pyx":128
+  /* "elaina_triehard/impl_c.pyx":154
  *         self.nodes[0].children_indices = NULL
  *         self.nodes[0].num_children = 0
  *         self.nodes[0].is_terminal = False             # <<<<<<<<<<<<<<
@@ -3276,7 +3818,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_trie(struct __pyx
  */
   (__pyx_v_self->nodes[0]).is_terminal = 0;
 
-  /* "elaina_triehard/impl_c.pyx":129
+  /* "elaina_triehard/impl_c.pyx":155
  *         self.nodes[0].num_children = 0
  *         self.nodes[0].is_terminal = False
  *         self.nodes[0].word = NULL             # <<<<<<<<<<<<<<
@@ -3285,17 +3827,17 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_trie(struct __pyx
  */
   (__pyx_v_self->nodes[0]).word = NULL;
 
-  /* "elaina_triehard/impl_c.pyx":130
+  /* "elaina_triehard/impl_c.pyx":156
  *         self.nodes[0].is_terminal = False
  *         self.nodes[0].word = NULL
  *         self._build_node(0, self.bytes_strings, self.bytes_lengths, self.num_strings, 0)             # <<<<<<<<<<<<<<
  * 
  *     cdef void _build_node(self, int node_index, unsigned char** strings, int* lengths, int num_strings, int position):
  */
-  ((struct __pyx_vtabstruct_15elaina_triehard_6impl_c_TrieHard *)__pyx_v_self->__pyx_vtab)->_build_node(__pyx_v_self, 0, __pyx_v_self->bytes_strings, __pyx_v_self->bytes_lengths, __pyx_v_self->num_strings, 0); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 130, __pyx_L1_error)
+  ((struct __pyx_vtabstruct_15elaina_triehard_6impl_c_TrieHard *)__pyx_v_self->__pyx_vtab)->_build_node(__pyx_v_self, 0, __pyx_v_self->bytes_strings, __pyx_v_self->bytes_lengths, __pyx_v_self->num_strings, 0); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 156, __pyx_L1_error)
 
-  /* "elaina_triehard/impl_c.pyx":117
- *         self._build_trie()
+  /* "elaina_triehard/impl_c.pyx":141
+ *             raise e
  * 
  *     cdef void _build_trie(self):             # <<<<<<<<<<<<<<
  *         """
@@ -3305,11 +3847,13 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_trie(struct __pyx
   /* function exit code */
   goto __pyx_L0;
   __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("elaina_triehard.impl_c.TrieHard._build_trie", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
 }
 
-/* "elaina_triehard/impl_c.pyx":132
+/* "elaina_triehard/impl_c.pyx":158
  *         self._build_node(0, self.bytes_strings, self.bytes_lengths, self.num_strings, 0)
  * 
  *     cdef void _build_node(self, int node_index, unsigned char** strings, int* lengths, int num_strings, int position):             # <<<<<<<<<<<<<<
@@ -3336,6 +3880,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
   int __pyx_v_child_num_strings;
   unsigned char **__pyx_v_child_strings_array;
   int *__pyx_v_child_lengths_array;
+  struct __pyx_t_15elaina_triehard_6impl_c_TrieHardNode *__pyx_v_temp_nodes;
   PyObject *__pyx_v_word_length = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -3351,26 +3896,34 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
   int __pyx_t_11;
   int __pyx_t_12;
   int __pyx_t_13;
-  unsigned char *__pyx_t_14;
-  int __pyx_t_15;
+  int __pyx_t_14;
+  unsigned char *__pyx_t_15;
+  int __pyx_t_16;
+  char const *__pyx_t_17;
+  PyObject *__pyx_t_18 = NULL;
+  PyObject *__pyx_t_19 = NULL;
+  PyObject *__pyx_t_20 = NULL;
+  PyObject *__pyx_t_21 = NULL;
+  PyObject *__pyx_t_22 = NULL;
+  PyObject *__pyx_t_23 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_build_node", 1);
 
-  /* "elaina_triehard/impl_c.pyx":154
- *         cdef int* child_lengths_array
+  /* "elaina_triehard/impl_c.pyx":181
+ *         cdef TrieHardNode* temp_nodes
  * 
  *         byte_to_strings = {}             # <<<<<<<<<<<<<<
  *         is_terminal = False
  *         mask = 0
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_byte_to_strings = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "elaina_triehard/impl_c.pyx":155
+  /* "elaina_triehard/impl_c.pyx":182
  * 
  *         byte_to_strings = {}
  *         is_terminal = False             # <<<<<<<<<<<<<<
@@ -3379,7 +3932,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
   __pyx_v_is_terminal = 0;
 
-  /* "elaina_triehard/impl_c.pyx":156
+  /* "elaina_triehard/impl_c.pyx":183
  *         byte_to_strings = {}
  *         is_terminal = False
  *         mask = 0             # <<<<<<<<<<<<<<
@@ -3388,7 +3941,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
   __pyx_v_mask = 0;
 
-  /* "elaina_triehard/impl_c.pyx":157
+  /* "elaina_triehard/impl_c.pyx":184
  *         is_terminal = False
  *         mask = 0
  *         num_sorted_keys = 0             # <<<<<<<<<<<<<<
@@ -3397,7 +3950,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
   __pyx_v_num_sorted_keys = 0;
 
-  /* "elaina_triehard/impl_c.pyx":158
+  /* "elaina_triehard/impl_c.pyx":185
  *         mask = 0
  *         num_sorted_keys = 0
  *         children_indices = NULL             # <<<<<<<<<<<<<<
@@ -3406,7 +3959,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
   __pyx_v_children_indices = NULL;
 
-  /* "elaina_triehard/impl_c.pyx":161
+  /* "elaina_triehard/impl_c.pyx":188
  * 
  *         #  byte_to_strings
  *         for i in range(num_strings):             # <<<<<<<<<<<<<<
@@ -3418,7 +3971,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
   for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
     __pyx_v_i = __pyx_t_4;
 
-    /* "elaina_triehard/impl_c.pyx":162
+    /* "elaina_triehard/impl_c.pyx":189
  *         #  byte_to_strings
  *         for i in range(num_strings):
  *             bs = strings[i]             # <<<<<<<<<<<<<<
@@ -3427,7 +3980,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
     __pyx_v_bs = (__pyx_v_strings[__pyx_v_i]);
 
-    /* "elaina_triehard/impl_c.pyx":163
+    /* "elaina_triehard/impl_c.pyx":190
  *         for i in range(num_strings):
  *             bs = strings[i]
  *             length = lengths[i]             # <<<<<<<<<<<<<<
@@ -3436,7 +3989,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
     __pyx_v_length = (__pyx_v_lengths[__pyx_v_i]);
 
-    /* "elaina_triehard/impl_c.pyx":164
+    /* "elaina_triehard/impl_c.pyx":191
  *             bs = strings[i]
  *             length = lengths[i]
  *             if position == length:             # <<<<<<<<<<<<<<
@@ -3446,7 +3999,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
     __pyx_t_5 = (__pyx_v_position == __pyx_v_length);
     if (__pyx_t_5) {
 
-      /* "elaina_triehard/impl_c.pyx":165
+      /* "elaina_triehard/impl_c.pyx":192
  *             length = lengths[i]
  *             if position == length:
  *                 is_terminal = True  #             # <<<<<<<<<<<<<<
@@ -3455,64 +4008,96 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
       __pyx_v_is_terminal = 1;
 
-      /* "elaina_triehard/impl_c.pyx":167
+      /* "elaina_triehard/impl_c.pyx":194
  *                 is_terminal = True  #
  *                 #
  *                 word_length = length             # <<<<<<<<<<<<<<
  *                 self.nodes[node_index].word = <char*>malloc((word_length + 1) * sizeof(char))
- *                 memcpy(self.nodes[node_index].word, bs, word_length * sizeof(char))
+ *                 if self.nodes[node_index].word == NULL:
  */
-      __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_length); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_length); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 194, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_XDECREF_SET(__pyx_v_word_length, __pyx_t_1);
       __pyx_t_1 = 0;
 
-      /* "elaina_triehard/impl_c.pyx":168
+      /* "elaina_triehard/impl_c.pyx":195
  *                 #
  *                 word_length = length
  *                 self.nodes[node_index].word = <char*>malloc((word_length + 1) * sizeof(char))             # <<<<<<<<<<<<<<
- *                 memcpy(self.nodes[node_index].word, bs, word_length * sizeof(char))
- *                 self.nodes[node_index].word[word_length] = b'\0'  #
+ *                 if self.nodes[node_index].word == NULL:
+ *                     raise MemoryError("Failed to allocate memory for word.")
  */
-      __pyx_t_1 = __Pyx_PyInt_AddObjC(__pyx_v_word_length, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 168, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyInt_AddObjC(__pyx_v_word_length, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 195, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_6 = __Pyx_PyInt_FromSize_t((sizeof(char))); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 168, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyInt_FromSize_t((sizeof(char))); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 195, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_7 = PyNumber_Multiply(__pyx_t_1, __pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 168, __pyx_L1_error)
+      __pyx_t_7 = PyNumber_Multiply(__pyx_t_1, __pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 195, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __pyx_t_8 = __Pyx_PyInt_As_size_t(__pyx_t_7); if (unlikely((__pyx_t_8 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 168, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyInt_As_size_t(__pyx_t_7); if (unlikely((__pyx_t_8 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 195, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       (__pyx_v_self->nodes[__pyx_v_node_index]).word = ((char *)malloc(__pyx_t_8));
 
-      /* "elaina_triehard/impl_c.pyx":169
+      /* "elaina_triehard/impl_c.pyx":196
  *                 word_length = length
  *                 self.nodes[node_index].word = <char*>malloc((word_length + 1) * sizeof(char))
+ *                 if self.nodes[node_index].word == NULL:             # <<<<<<<<<<<<<<
+ *                     raise MemoryError("Failed to allocate memory for word.")
+ *                 memcpy(self.nodes[node_index].word, bs, word_length * sizeof(char))
+ */
+      __pyx_t_5 = ((__pyx_v_self->nodes[__pyx_v_node_index]).word == NULL);
+      if (unlikely(__pyx_t_5)) {
+
+        /* "elaina_triehard/impl_c.pyx":197
+ *                 self.nodes[node_index].word = <char*>malloc((word_length + 1) * sizeof(char))
+ *                 if self.nodes[node_index].word == NULL:
+ *                     raise MemoryError("Failed to allocate memory for word.")             # <<<<<<<<<<<<<<
+ *                 memcpy(self.nodes[node_index].word, bs, word_length * sizeof(char))
+ *                 self.nodes[node_index].word[word_length] = b'\0'  #
+ */
+        __pyx_t_7 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__5, NULL); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 197, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_7);
+        __Pyx_Raise(__pyx_t_7, 0, 0, 0);
+        __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+        __PYX_ERR(0, 197, __pyx_L1_error)
+
+        /* "elaina_triehard/impl_c.pyx":196
+ *                 word_length = length
+ *                 self.nodes[node_index].word = <char*>malloc((word_length + 1) * sizeof(char))
+ *                 if self.nodes[node_index].word == NULL:             # <<<<<<<<<<<<<<
+ *                     raise MemoryError("Failed to allocate memory for word.")
+ *                 memcpy(self.nodes[node_index].word, bs, word_length * sizeof(char))
+ */
+      }
+
+      /* "elaina_triehard/impl_c.pyx":198
+ *                 if self.nodes[node_index].word == NULL:
+ *                     raise MemoryError("Failed to allocate memory for word.")
  *                 memcpy(self.nodes[node_index].word, bs, word_length * sizeof(char))             # <<<<<<<<<<<<<<
  *                 self.nodes[node_index].word[word_length] = b'\0'  #
  *             if position < length:
  */
-      __pyx_t_7 = __Pyx_PyInt_FromSize_t((sizeof(char))); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 169, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyInt_FromSize_t((sizeof(char))); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 198, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
-      __pyx_t_6 = PyNumber_Multiply(__pyx_v_word_length, __pyx_t_7); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 169, __pyx_L1_error)
+      __pyx_t_6 = PyNumber_Multiply(__pyx_v_word_length, __pyx_t_7); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 198, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      __pyx_t_8 = __Pyx_PyInt_As_size_t(__pyx_t_6); if (unlikely((__pyx_t_8 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 169, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyInt_As_size_t(__pyx_t_6); if (unlikely((__pyx_t_8 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 198, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       (void)(memcpy((__pyx_v_self->nodes[__pyx_v_node_index]).word, __pyx_v_bs, __pyx_t_8));
 
-      /* "elaina_triehard/impl_c.pyx":170
- *                 self.nodes[node_index].word = <char*>malloc((word_length + 1) * sizeof(char))
+      /* "elaina_triehard/impl_c.pyx":199
+ *                     raise MemoryError("Failed to allocate memory for word.")
  *                 memcpy(self.nodes[node_index].word, bs, word_length * sizeof(char))
  *                 self.nodes[node_index].word[word_length] = b'\0'  #             # <<<<<<<<<<<<<<
  *             if position < length:
  *                 b = bs[position]
  */
-      __pyx_t_9 = __Pyx_PyIndex_AsSsize_t(__pyx_v_word_length); if (unlikely((__pyx_t_9 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 170, __pyx_L1_error)
+      __pyx_t_9 = __Pyx_PyIndex_AsSsize_t(__pyx_v_word_length); if (unlikely((__pyx_t_9 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 199, __pyx_L1_error)
       ((__pyx_v_self->nodes[__pyx_v_node_index]).word[__pyx_t_9]) = '\x00';
 
-      /* "elaina_triehard/impl_c.pyx":164
+      /* "elaina_triehard/impl_c.pyx":191
  *             bs = strings[i]
  *             length = lengths[i]
  *             if position == length:             # <<<<<<<<<<<<<<
@@ -3521,7 +4106,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
     }
 
-    /* "elaina_triehard/impl_c.pyx":171
+    /* "elaina_triehard/impl_c.pyx":200
  *                 memcpy(self.nodes[node_index].word, bs, word_length * sizeof(char))
  *                 self.nodes[node_index].word[word_length] = b'\0'  #
  *             if position < length:             # <<<<<<<<<<<<<<
@@ -3531,7 +4116,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
     __pyx_t_5 = (__pyx_v_position < __pyx_v_length);
     if (__pyx_t_5) {
 
-      /* "elaina_triehard/impl_c.pyx":172
+      /* "elaina_triehard/impl_c.pyx":201
  *                 self.nodes[node_index].word[word_length] = b'\0'  #
  *             if position < length:
  *                 b = bs[position]             # <<<<<<<<<<<<<<
@@ -3540,43 +4125,43 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
       __pyx_v_b = (__pyx_v_bs[__pyx_v_position]);
 
-      /* "elaina_triehard/impl_c.pyx":173
+      /* "elaina_triehard/impl_c.pyx":202
  *             if position < length:
  *                 b = bs[position]
  *                 if b not in byte_to_strings:             # <<<<<<<<<<<<<<
  *                     byte_to_strings[b] = {'strings': [], 'lengths': []}
  *                     sorted_keys[num_sorted_keys] = b
  */
-      __pyx_t_6 = __Pyx_PyInt_From_unsigned_char(__pyx_v_b); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 173, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyInt_From_unsigned_char(__pyx_v_b); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 202, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_5 = (__Pyx_PyDict_ContainsTF(__pyx_t_6, __pyx_v_byte_to_strings, Py_NE)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 173, __pyx_L1_error)
+      __pyx_t_5 = (__Pyx_PyDict_ContainsTF(__pyx_t_6, __pyx_v_byte_to_strings, Py_NE)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 202, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       if (__pyx_t_5) {
 
-        /* "elaina_triehard/impl_c.pyx":174
+        /* "elaina_triehard/impl_c.pyx":203
  *                 b = bs[position]
  *                 if b not in byte_to_strings:
  *                     byte_to_strings[b] = {'strings': [], 'lengths': []}             # <<<<<<<<<<<<<<
  *                     sorted_keys[num_sorted_keys] = b
  *                     num_sorted_keys += 1
  */
-        __pyx_t_6 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 174, __pyx_L1_error)
+        __pyx_t_6 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 203, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_7 = PyList_New(0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 174, __pyx_L1_error)
+        __pyx_t_7 = PyList_New(0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 203, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_7);
-        if (PyDict_SetItem(__pyx_t_6, __pyx_n_u_strings, __pyx_t_7) < 0) __PYX_ERR(0, 174, __pyx_L1_error)
+        if (PyDict_SetItem(__pyx_t_6, __pyx_n_u_strings, __pyx_t_7) < 0) __PYX_ERR(0, 203, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-        __pyx_t_7 = PyList_New(0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 174, __pyx_L1_error)
+        __pyx_t_7 = PyList_New(0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 203, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_7);
-        if (PyDict_SetItem(__pyx_t_6, __pyx_n_u_lengths, __pyx_t_7) < 0) __PYX_ERR(0, 174, __pyx_L1_error)
+        if (PyDict_SetItem(__pyx_t_6, __pyx_n_u_lengths, __pyx_t_7) < 0) __PYX_ERR(0, 203, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-        __pyx_t_7 = __Pyx_PyInt_From_unsigned_char(__pyx_v_b); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 174, __pyx_L1_error)
+        __pyx_t_7 = __Pyx_PyInt_From_unsigned_char(__pyx_v_b); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 203, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_7);
-        if (unlikely((PyDict_SetItem(__pyx_v_byte_to_strings, __pyx_t_7, __pyx_t_6) < 0))) __PYX_ERR(0, 174, __pyx_L1_error)
+        if (unlikely((PyDict_SetItem(__pyx_v_byte_to_strings, __pyx_t_7, __pyx_t_6) < 0))) __PYX_ERR(0, 203, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-        /* "elaina_triehard/impl_c.pyx":175
+        /* "elaina_triehard/impl_c.pyx":204
  *                 if b not in byte_to_strings:
  *                     byte_to_strings[b] = {'strings': [], 'lengths': []}
  *                     sorted_keys[num_sorted_keys] = b             # <<<<<<<<<<<<<<
@@ -3585,7 +4170,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
         (__pyx_v_sorted_keys[__pyx_v_num_sorted_keys]) = __pyx_v_b;
 
-        /* "elaina_triehard/impl_c.pyx":176
+        /* "elaina_triehard/impl_c.pyx":205
  *                     byte_to_strings[b] = {'strings': [], 'lengths': []}
  *                     sorted_keys[num_sorted_keys] = b
  *                     num_sorted_keys += 1             # <<<<<<<<<<<<<<
@@ -3594,7 +4179,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
         __pyx_v_num_sorted_keys = (__pyx_v_num_sorted_keys + 1);
 
-        /* "elaina_triehard/impl_c.pyx":173
+        /* "elaina_triehard/impl_c.pyx":202
  *             if position < length:
  *                 b = bs[position]
  *                 if b not in byte_to_strings:             # <<<<<<<<<<<<<<
@@ -3603,49 +4188,49 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
       }
 
-      /* "elaina_triehard/impl_c.pyx":177
+      /* "elaina_triehard/impl_c.pyx":206
  *                     sorted_keys[num_sorted_keys] = b
  *                     num_sorted_keys += 1
  *                 byte_to_strings[b]['strings'].append(bs)             # <<<<<<<<<<<<<<
  *                 byte_to_strings[b]['lengths'].append(length)
  * 
  */
-      __pyx_t_6 = __Pyx_PyInt_From_unsigned_char(__pyx_v_b); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 177, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyInt_From_unsigned_char(__pyx_v_b); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_7 = __Pyx_PyDict_GetItem(__pyx_v_byte_to_strings, __pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 177, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyDict_GetItem(__pyx_v_byte_to_strings, __pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_t_7, __pyx_n_u_strings); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 177, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_t_7, __pyx_n_u_strings); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      __pyx_t_7 = __Pyx_PyBytes_FromCString(__pyx_v_bs); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 177, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyBytes_FromCString(__pyx_v_bs); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
-      __pyx_t_10 = __Pyx_PyObject_Append(__pyx_t_6, __pyx_t_7); if (unlikely(__pyx_t_10 == ((int)-1))) __PYX_ERR(0, 177, __pyx_L1_error)
+      __pyx_t_10 = __Pyx_PyObject_Append(__pyx_t_6, __pyx_t_7); if (unlikely(__pyx_t_10 == ((int)-1))) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-      /* "elaina_triehard/impl_c.pyx":178
+      /* "elaina_triehard/impl_c.pyx":207
  *                     num_sorted_keys += 1
  *                 byte_to_strings[b]['strings'].append(bs)
  *                 byte_to_strings[b]['lengths'].append(length)             # <<<<<<<<<<<<<<
  * 
  *         #
  */
-      __pyx_t_7 = __Pyx_PyInt_From_unsigned_char(__pyx_v_b); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 178, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyInt_From_unsigned_char(__pyx_v_b); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 207, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
-      __pyx_t_6 = __Pyx_PyDict_GetItem(__pyx_v_byte_to_strings, __pyx_t_7); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 178, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyDict_GetItem(__pyx_v_byte_to_strings, __pyx_t_7); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 207, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_t_6, __pyx_n_u_lengths); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 178, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_t_6, __pyx_n_u_lengths); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 207, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __pyx_t_6 = __Pyx_PyInt_From_int(__pyx_v_length); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 178, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyInt_From_int(__pyx_v_length); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 207, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_10 = __Pyx_PyObject_Append(__pyx_t_7, __pyx_t_6); if (unlikely(__pyx_t_10 == ((int)-1))) __PYX_ERR(0, 178, __pyx_L1_error)
+      __pyx_t_10 = __Pyx_PyObject_Append(__pyx_t_7, __pyx_t_6); if (unlikely(__pyx_t_10 == ((int)-1))) __PYX_ERR(0, 207, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-      /* "elaina_triehard/impl_c.pyx":171
+      /* "elaina_triehard/impl_c.pyx":200
  *                 memcpy(self.nodes[node_index].word, bs, word_length * sizeof(char))
  *                 self.nodes[node_index].word[word_length] = b'\0'  #
  *             if position < length:             # <<<<<<<<<<<<<<
@@ -3655,7 +4240,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
     }
   }
 
-  /* "elaina_triehard/impl_c.pyx":181
+  /* "elaina_triehard/impl_c.pyx":210
  * 
  *         #
  *         for i in range(num_sorted_keys):             # <<<<<<<<<<<<<<
@@ -3667,7 +4252,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
   for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
     __pyx_v_i = __pyx_t_4;
 
-    /* "elaina_triehard/impl_c.pyx":182
+    /* "elaina_triehard/impl_c.pyx":211
  *         #
  *         for i in range(num_sorted_keys):
  *             b = sorted_keys[i]             # <<<<<<<<<<<<<<
@@ -3676,7 +4261,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
     __pyx_v_b = (__pyx_v_sorted_keys[__pyx_v_i]);
 
-    /* "elaina_triehard/impl_c.pyx":183
+    /* "elaina_triehard/impl_c.pyx":212
  *         for i in range(num_sorted_keys):
  *             b = sorted_keys[i]
  *             mask |= self.byte_to_mask[b]             # <<<<<<<<<<<<<<
@@ -3686,7 +4271,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
     __pyx_v_mask = (__pyx_v_mask | (__pyx_v_self->byte_to_mask[__pyx_v_b]));
   }
 
-  /* "elaina_triehard/impl_c.pyx":185
+  /* "elaina_triehard/impl_c.pyx":214
  *             mask |= self.byte_to_mask[b]
  * 
  *         num_children = num_sorted_keys             # <<<<<<<<<<<<<<
@@ -3695,7 +4280,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
   __pyx_v_num_children = __pyx_v_num_sorted_keys;
 
-  /* "elaina_triehard/impl_c.pyx":188
+  /* "elaina_triehard/impl_c.pyx":217
  * 
  *         #  qsort  sorted_keys
  *         qsort(sorted_keys, num_children, sizeof(unsigned char), compare_unsigned_char)             # <<<<<<<<<<<<<<
@@ -3704,35 +4289,67 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
   qsort(__pyx_v_sorted_keys, __pyx_v_num_children, (sizeof(unsigned char)), __pyx_f_15elaina_triehard_6impl_c_compare_unsigned_char);
 
-  /* "elaina_triehard/impl_c.pyx":191
+  /* "elaina_triehard/impl_c.pyx":220
  * 
  *         #
  *         if num_children > 0:             # <<<<<<<<<<<<<<
  *             children_indices = <unsigned int*>malloc(num_children * sizeof(unsigned int))
- * 
+ *             if children_indices == NULL:
  */
   __pyx_t_5 = (__pyx_v_num_children > 0);
   if (__pyx_t_5) {
 
-    /* "elaina_triehard/impl_c.pyx":192
+    /* "elaina_triehard/impl_c.pyx":221
  *         #
  *         if num_children > 0:
  *             children_indices = <unsigned int*>malloc(num_children * sizeof(unsigned int))             # <<<<<<<<<<<<<<
- * 
- *         #
+ *             if children_indices == NULL:
+ *                 raise MemoryError("Failed to allocate memory for children_indices.")
  */
     __pyx_v_children_indices = ((unsigned int *)malloc((__pyx_v_num_children * (sizeof(unsigned int)))));
 
-    /* "elaina_triehard/impl_c.pyx":191
+    /* "elaina_triehard/impl_c.pyx":222
+ *         if num_children > 0:
+ *             children_indices = <unsigned int*>malloc(num_children * sizeof(unsigned int))
+ *             if children_indices == NULL:             # <<<<<<<<<<<<<<
+ *                 raise MemoryError("Failed to allocate memory for children_indices.")
+ * 
+ */
+    __pyx_t_5 = (__pyx_v_children_indices == NULL);
+    if (unlikely(__pyx_t_5)) {
+
+      /* "elaina_triehard/impl_c.pyx":223
+ *             children_indices = <unsigned int*>malloc(num_children * sizeof(unsigned int))
+ *             if children_indices == NULL:
+ *                 raise MemoryError("Failed to allocate memory for children_indices.")             # <<<<<<<<<<<<<<
+ * 
+ *         #
+ */
+      __pyx_t_6 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__6, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 223, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_6);
+      __Pyx_Raise(__pyx_t_6, 0, 0, 0);
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __PYX_ERR(0, 223, __pyx_L1_error)
+
+      /* "elaina_triehard/impl_c.pyx":222
+ *         if num_children > 0:
+ *             children_indices = <unsigned int*>malloc(num_children * sizeof(unsigned int))
+ *             if children_indices == NULL:             # <<<<<<<<<<<<<<
+ *                 raise MemoryError("Failed to allocate memory for children_indices.")
+ * 
+ */
+    }
+
+    /* "elaina_triehard/impl_c.pyx":220
  * 
  *         #
  *         if num_children > 0:             # <<<<<<<<<<<<<<
  *             children_indices = <unsigned int*>malloc(num_children * sizeof(unsigned int))
- * 
+ *             if children_indices == NULL:
  */
   }
 
-  /* "elaina_triehard/impl_c.pyx":195
+  /* "elaina_triehard/impl_c.pyx":226
  * 
  *         #
  *         self.nodes[node_index].mask = mask             # <<<<<<<<<<<<<<
@@ -3741,7 +4358,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
   (__pyx_v_self->nodes[__pyx_v_node_index]).mask = __pyx_v_mask;
 
-  /* "elaina_triehard/impl_c.pyx":196
+  /* "elaina_triehard/impl_c.pyx":227
  *         #
  *         self.nodes[node_index].mask = mask
  *         self.nodes[node_index].num_children = num_children             # <<<<<<<<<<<<<<
@@ -3750,7 +4367,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
   (__pyx_v_self->nodes[__pyx_v_node_index]).num_children = __pyx_v_num_children;
 
-  /* "elaina_triehard/impl_c.pyx":197
+  /* "elaina_triehard/impl_c.pyx":228
  *         self.nodes[node_index].mask = mask
  *         self.nodes[node_index].num_children = num_children
  *         self.nodes[node_index].is_terminal = is_terminal             # <<<<<<<<<<<<<<
@@ -3759,44 +4376,61 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
   (__pyx_v_self->nodes[__pyx_v_node_index]).is_terminal = __pyx_v_is_terminal;
 
-  /* "elaina_triehard/impl_c.pyx":198
+  /* "elaina_triehard/impl_c.pyx":229
  *         self.nodes[node_index].num_children = num_children
  *         self.nodes[node_index].is_terminal = is_terminal
  *         self.nodes[node_index].children_indices = children_indices             # <<<<<<<<<<<<<<
  *         # word  NULL
- *         if not is_terminal:
+ *         if not is_terminal and self.nodes[node_index].word != NULL:
  */
   (__pyx_v_self->nodes[__pyx_v_node_index]).children_indices = __pyx_v_children_indices;
 
-  /* "elaina_triehard/impl_c.pyx":200
+  /* "elaina_triehard/impl_c.pyx":231
  *         self.nodes[node_index].children_indices = children_indices
  *         # word  NULL
- *         if not is_terminal:             # <<<<<<<<<<<<<<
+ *         if not is_terminal and self.nodes[node_index].word != NULL:             # <<<<<<<<<<<<<<
+ *             free(self.nodes[node_index].word)
+ *             self.nodes[node_index].word = NULL
+ */
+  __pyx_t_11 = (!__pyx_v_is_terminal);
+  if (__pyx_t_11) {
+  } else {
+    __pyx_t_5 = __pyx_t_11;
+    goto __pyx_L14_bool_binop_done;
+  }
+  __pyx_t_11 = ((__pyx_v_self->nodes[__pyx_v_node_index]).word != NULL);
+  __pyx_t_5 = __pyx_t_11;
+  __pyx_L14_bool_binop_done:;
+  if (__pyx_t_5) {
+
+    /* "elaina_triehard/impl_c.pyx":232
+ *         # word  NULL
+ *         if not is_terminal and self.nodes[node_index].word != NULL:
+ *             free(self.nodes[node_index].word)             # <<<<<<<<<<<<<<
  *             self.nodes[node_index].word = NULL
  * 
  */
-  __pyx_t_5 = (!__pyx_v_is_terminal);
-  if (__pyx_t_5) {
+    free((__pyx_v_self->nodes[__pyx_v_node_index]).word);
 
-    /* "elaina_triehard/impl_c.pyx":201
- *         # word  NULL
- *         if not is_terminal:
+    /* "elaina_triehard/impl_c.pyx":233
+ *         if not is_terminal and self.nodes[node_index].word != NULL:
+ *             free(self.nodes[node_index].word)
  *             self.nodes[node_index].word = NULL             # <<<<<<<<<<<<<<
  * 
  *         #
  */
     (__pyx_v_self->nodes[__pyx_v_node_index]).word = NULL;
 
-    /* "elaina_triehard/impl_c.pyx":200
+    /* "elaina_triehard/impl_c.pyx":231
  *         self.nodes[node_index].children_indices = children_indices
  *         # word  NULL
- *         if not is_terminal:             # <<<<<<<<<<<<<<
+ *         if not is_terminal and self.nodes[node_index].word != NULL:             # <<<<<<<<<<<<<<
+ *             free(self.nodes[node_index].word)
  *             self.nodes[node_index].word = NULL
- * 
  */
   }
 
-  /* "elaina_triehard/impl_c.pyx":204
+  /* "elaina_triehard/impl_c.pyx":236
  * 
  *         #
  *         for i in range(num_children):             # <<<<<<<<<<<<<<
@@ -3808,44 +4442,85 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
   for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
     __pyx_v_i = __pyx_t_4;
 
-    /* "elaina_triehard/impl_c.pyx":205
+    /* "elaina_triehard/impl_c.pyx":237
  *         #
  *         for i in range(num_children):
  *             child_node_index = self.num_nodes             # <<<<<<<<<<<<<<
  *             children_indices[i] = child_node_index
  *             #  nodes
  */
-    __pyx_t_11 = __pyx_v_self->num_nodes;
-    __pyx_v_child_node_index = __pyx_t_11;
+    __pyx_t_12 = __pyx_v_self->num_nodes;
+    __pyx_v_child_node_index = __pyx_t_12;
 
-    /* "elaina_triehard/impl_c.pyx":206
+    /* "elaina_triehard/impl_c.pyx":238
  *         for i in range(num_children):
  *             child_node_index = self.num_nodes
  *             children_indices[i] = child_node_index             # <<<<<<<<<<<<<<
  *             #  nodes
- *             self.nodes = <TrieHardNode*>realloc(self.nodes, (self.num_nodes + 1) * sizeof(TrieHardNode))
+ *             temp_nodes = <TrieHardNode*>realloc(self.nodes, (self.num_nodes + 1) * sizeof(TrieHardNode))
  */
     (__pyx_v_children_indices[__pyx_v_i]) = __pyx_v_child_node_index;
 
-    /* "elaina_triehard/impl_c.pyx":208
+    /* "elaina_triehard/impl_c.pyx":240
  *             children_indices[i] = child_node_index
  *             #  nodes
- *             self.nodes = <TrieHardNode*>realloc(self.nodes, (self.num_nodes + 1) * sizeof(TrieHardNode))             # <<<<<<<<<<<<<<
+ *             temp_nodes = <TrieHardNode*>realloc(self.nodes, (self.num_nodes + 1) * sizeof(TrieHardNode))             # <<<<<<<<<<<<<<
+ *             if temp_nodes == NULL:
+ *                 raise MemoryError("Failed to reallocate memory for nodes.")
+ */
+    __pyx_v_temp_nodes = ((struct __pyx_t_15elaina_triehard_6impl_c_TrieHardNode *)realloc(__pyx_v_self->nodes, ((__pyx_v_self->num_nodes + 1) * (sizeof(struct __pyx_t_15elaina_triehard_6impl_c_TrieHardNode)))));
+
+    /* "elaina_triehard/impl_c.pyx":241
+ *             #  nodes
+ *             temp_nodes = <TrieHardNode*>realloc(self.nodes, (self.num_nodes + 1) * sizeof(TrieHardNode))
+ *             if temp_nodes == NULL:             # <<<<<<<<<<<<<<
+ *                 raise MemoryError("Failed to reallocate memory for nodes.")
+ *             self.nodes = temp_nodes
+ */
+    __pyx_t_5 = (__pyx_v_temp_nodes == NULL);
+    if (unlikely(__pyx_t_5)) {
+
+      /* "elaina_triehard/impl_c.pyx":242
+ *             temp_nodes = <TrieHardNode*>realloc(self.nodes, (self.num_nodes + 1) * sizeof(TrieHardNode))
+ *             if temp_nodes == NULL:
+ *                 raise MemoryError("Failed to reallocate memory for nodes.")             # <<<<<<<<<<<<<<
+ *             self.nodes = temp_nodes
+ *             self.num_nodes += 1
+ */
+      __pyx_t_6 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__7, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 242, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_6);
+      __Pyx_Raise(__pyx_t_6, 0, 0, 0);
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __PYX_ERR(0, 242, __pyx_L1_error)
+
+      /* "elaina_triehard/impl_c.pyx":241
+ *             #  nodes
+ *             temp_nodes = <TrieHardNode*>realloc(self.nodes, (self.num_nodes + 1) * sizeof(TrieHardNode))
+ *             if temp_nodes == NULL:             # <<<<<<<<<<<<<<
+ *                 raise MemoryError("Failed to reallocate memory for nodes.")
+ *             self.nodes = temp_nodes
+ */
+    }
+
+    /* "elaina_triehard/impl_c.pyx":243
+ *             if temp_nodes == NULL:
+ *                 raise MemoryError("Failed to reallocate memory for nodes.")
+ *             self.nodes = temp_nodes             # <<<<<<<<<<<<<<
  *             self.num_nodes += 1
  *             #
  */
-    __pyx_v_self->nodes = ((struct __pyx_t_15elaina_triehard_6impl_c_TrieHardNode *)realloc(__pyx_v_self->nodes, ((__pyx_v_self->num_nodes + 1) * (sizeof(struct __pyx_t_15elaina_triehard_6impl_c_TrieHardNode)))));
+    __pyx_v_self->nodes = __pyx_v_temp_nodes;
 
-    /* "elaina_triehard/impl_c.pyx":209
- *             #  nodes
- *             self.nodes = <TrieHardNode*>realloc(self.nodes, (self.num_nodes + 1) * sizeof(TrieHardNode))
+    /* "elaina_triehard/impl_c.pyx":244
+ *                 raise MemoryError("Failed to reallocate memory for nodes.")
+ *             self.nodes = temp_nodes
  *             self.num_nodes += 1             # <<<<<<<<<<<<<<
  *             #
  *             self.nodes[child_node_index].mask = 0
  */
     __pyx_v_self->num_nodes = (__pyx_v_self->num_nodes + 1);
 
-    /* "elaina_triehard/impl_c.pyx":211
+    /* "elaina_triehard/impl_c.pyx":246
  *             self.num_nodes += 1
  *             #
  *             self.nodes[child_node_index].mask = 0             # <<<<<<<<<<<<<<
@@ -3854,7 +4529,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
     (__pyx_v_self->nodes[__pyx_v_child_node_index]).mask = 0;
 
-    /* "elaina_triehard/impl_c.pyx":212
+    /* "elaina_triehard/impl_c.pyx":247
  *             #
  *             self.nodes[child_node_index].mask = 0
  *             self.nodes[child_node_index].num_children = 0             # <<<<<<<<<<<<<<
@@ -3863,7 +4538,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
     (__pyx_v_self->nodes[__pyx_v_child_node_index]).num_children = 0;
 
-    /* "elaina_triehard/impl_c.pyx":213
+    /* "elaina_triehard/impl_c.pyx":248
  *             self.nodes[child_node_index].mask = 0
  *             self.nodes[child_node_index].num_children = 0
  *             self.nodes[child_node_index].is_terminal = False             # <<<<<<<<<<<<<<
@@ -3872,7 +4547,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
     (__pyx_v_self->nodes[__pyx_v_child_node_index]).is_terminal = 0;
 
-    /* "elaina_triehard/impl_c.pyx":214
+    /* "elaina_triehard/impl_c.pyx":249
  *             self.nodes[child_node_index].num_children = 0
  *             self.nodes[child_node_index].is_terminal = False
  *             self.nodes[child_node_index].children_indices = NULL             # <<<<<<<<<<<<<<
@@ -3881,7 +4556,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
     (__pyx_v_self->nodes[__pyx_v_child_node_index]).children_indices = NULL;
 
-    /* "elaina_triehard/impl_c.pyx":215
+    /* "elaina_triehard/impl_c.pyx":250
  *             self.nodes[child_node_index].is_terminal = False
  *             self.nodes[child_node_index].children_indices = NULL
  *             self.nodes[child_node_index].word = NULL             # <<<<<<<<<<<<<<
@@ -3891,7 +4566,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
     (__pyx_v_self->nodes[__pyx_v_child_node_index]).word = NULL;
   }
 
-  /* "elaina_triehard/impl_c.pyx":218
+  /* "elaina_triehard/impl_c.pyx":253
  * 
  *         #
  *         for i in range(num_children):             # <<<<<<<<<<<<<<
@@ -3903,7 +4578,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
   for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
     __pyx_v_i = __pyx_t_4;
 
-    /* "elaina_triehard/impl_c.pyx":219
+    /* "elaina_triehard/impl_c.pyx":254
  *         #
  *         for i in range(num_children):
  *             b = sorted_keys[i]             # <<<<<<<<<<<<<<
@@ -3912,7 +4587,7 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
     __pyx_v_b = (__pyx_v_sorted_keys[__pyx_v_i]);
 
-    /* "elaina_triehard/impl_c.pyx":220
+    /* "elaina_triehard/impl_c.pyx":255
  *         for i in range(num_children):
  *             b = sorted_keys[i]
  *             child_node_index = children_indices[i]             # <<<<<<<<<<<<<<
@@ -3921,152 +4596,292 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
  */
     __pyx_v_child_node_index = (__pyx_v_children_indices[__pyx_v_i]);
 
-    /* "elaina_triehard/impl_c.pyx":221
+    /* "elaina_triehard/impl_c.pyx":256
  *             b = sorted_keys[i]
  *             child_node_index = children_indices[i]
  *             child_strings_list = byte_to_strings[b]['strings']             # <<<<<<<<<<<<<<
  *             child_lengths_list = byte_to_strings[b]['lengths']
  *             child_num_strings = len(child_strings_list)
  */
-    __pyx_t_6 = __Pyx_PyInt_From_unsigned_char(__pyx_v_b); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 221, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyInt_From_unsigned_char(__pyx_v_b); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 256, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = __Pyx_PyDict_GetItem(__pyx_v_byte_to_strings, __pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 221, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyDict_GetItem(__pyx_v_byte_to_strings, __pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 256, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_t_7, __pyx_n_u_strings); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 221, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_t_7, __pyx_n_u_strings); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 256, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    if (!(likely(PyList_CheckExact(__pyx_t_6))||((__pyx_t_6) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_6))) __PYX_ERR(0, 221, __pyx_L1_error)
+    if (!(likely(PyList_CheckExact(__pyx_t_6))||((__pyx_t_6) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_6))) __PYX_ERR(0, 256, __pyx_L1_error)
     __Pyx_XDECREF_SET(__pyx_v_child_strings_list, ((PyObject*)__pyx_t_6));
     __pyx_t_6 = 0;
 
-    /* "elaina_triehard/impl_c.pyx":222
+    /* "elaina_triehard/impl_c.pyx":257
  *             child_node_index = children_indices[i]
  *             child_strings_list = byte_to_strings[b]['strings']
  *             child_lengths_list = byte_to_strings[b]['lengths']             # <<<<<<<<<<<<<<
  *             child_num_strings = len(child_strings_list)
  *             child_strings_array = <unsigned char**>malloc(child_num_strings * sizeof(unsigned char*))
  */
-    __pyx_t_6 = __Pyx_PyInt_From_unsigned_char(__pyx_v_b); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 222, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyInt_From_unsigned_char(__pyx_v_b); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 257, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = __Pyx_PyDict_GetItem(__pyx_v_byte_to_strings, __pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 222, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyDict_GetItem(__pyx_v_byte_to_strings, __pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 257, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_t_7, __pyx_n_u_lengths); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 222, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_t_7, __pyx_n_u_lengths); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 257, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    if (!(likely(PyList_CheckExact(__pyx_t_6))||((__pyx_t_6) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_6))) __PYX_ERR(0, 222, __pyx_L1_error)
+    if (!(likely(PyList_CheckExact(__pyx_t_6))||((__pyx_t_6) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_6))) __PYX_ERR(0, 257, __pyx_L1_error)
     __Pyx_XDECREF_SET(__pyx_v_child_lengths_list, ((PyObject*)__pyx_t_6));
     __pyx_t_6 = 0;
 
-    /* "elaina_triehard/impl_c.pyx":223
+    /* "elaina_triehard/impl_c.pyx":258
  *             child_strings_list = byte_to_strings[b]['strings']
  *             child_lengths_list = byte_to_strings[b]['lengths']
  *             child_num_strings = len(child_strings_list)             # <<<<<<<<<<<<<<
  *             child_strings_array = <unsigned char**>malloc(child_num_strings * sizeof(unsigned char*))
- *             child_lengths_array = <int*>malloc(child_num_strings * sizeof(int))
+ *             if child_strings_array == NULL:
  */
     if (unlikely(__pyx_v_child_strings_list == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 223, __pyx_L1_error)
+      __PYX_ERR(0, 258, __pyx_L1_error)
     }
-    __pyx_t_9 = __Pyx_PyList_GET_SIZE(__pyx_v_child_strings_list); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 223, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyList_GET_SIZE(__pyx_v_child_strings_list); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 258, __pyx_L1_error)
     __pyx_v_child_num_strings = __pyx_t_9;
 
-    /* "elaina_triehard/impl_c.pyx":224
+    /* "elaina_triehard/impl_c.pyx":259
  *             child_lengths_list = byte_to_strings[b]['lengths']
  *             child_num_strings = len(child_strings_list)
  *             child_strings_array = <unsigned char**>malloc(child_num_strings * sizeof(unsigned char*))             # <<<<<<<<<<<<<<
- *             child_lengths_array = <int*>malloc(child_num_strings * sizeof(int))
- *             for j in range(child_num_strings):
+ *             if child_strings_array == NULL:
+ *                 raise MemoryError("Failed to allocate memory for child_strings_array.")
  */
     __pyx_v_child_strings_array = ((unsigned char **)malloc((__pyx_v_child_num_strings * (sizeof(unsigned char *)))));
 
-    /* "elaina_triehard/impl_c.pyx":225
+    /* "elaina_triehard/impl_c.pyx":260
  *             child_num_strings = len(child_strings_list)
  *             child_strings_array = <unsigned char**>malloc(child_num_strings * sizeof(unsigned char*))
+ *             if child_strings_array == NULL:             # <<<<<<<<<<<<<<
+ *                 raise MemoryError("Failed to allocate memory for child_strings_array.")
+ *             child_lengths_array = <int*>malloc(child_num_strings * sizeof(int))
+ */
+    __pyx_t_5 = (__pyx_v_child_strings_array == NULL);
+    if (unlikely(__pyx_t_5)) {
+
+      /* "elaina_triehard/impl_c.pyx":261
+ *             child_strings_array = <unsigned char**>malloc(child_num_strings * sizeof(unsigned char*))
+ *             if child_strings_array == NULL:
+ *                 raise MemoryError("Failed to allocate memory for child_strings_array.")             # <<<<<<<<<<<<<<
+ *             child_lengths_array = <int*>malloc(child_num_strings * sizeof(int))
+ *             if child_lengths_array == NULL:
+ */
+      __pyx_t_6 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 261, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_6);
+      __Pyx_Raise(__pyx_t_6, 0, 0, 0);
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __PYX_ERR(0, 261, __pyx_L1_error)
+
+      /* "elaina_triehard/impl_c.pyx":260
+ *             child_num_strings = len(child_strings_list)
+ *             child_strings_array = <unsigned char**>malloc(child_num_strings * sizeof(unsigned char*))
+ *             if child_strings_array == NULL:             # <<<<<<<<<<<<<<
+ *                 raise MemoryError("Failed to allocate memory for child_strings_array.")
+ *             child_lengths_array = <int*>malloc(child_num_strings * sizeof(int))
+ */
+    }
+
+    /* "elaina_triehard/impl_c.pyx":262
+ *             if child_strings_array == NULL:
+ *                 raise MemoryError("Failed to allocate memory for child_strings_array.")
  *             child_lengths_array = <int*>malloc(child_num_strings * sizeof(int))             # <<<<<<<<<<<<<<
- *             for j in range(child_num_strings):
- *                 child_strings_array[j] = child_strings_list[j]
+ *             if child_lengths_array == NULL:
+ *                 free(child_strings_array)
  */
     __pyx_v_child_lengths_array = ((int *)malloc((__pyx_v_child_num_strings * (sizeof(int)))));
 
-    /* "elaina_triehard/impl_c.pyx":226
- *             child_strings_array = <unsigned char**>malloc(child_num_strings * sizeof(unsigned char*))
+    /* "elaina_triehard/impl_c.pyx":263
+ *                 raise MemoryError("Failed to allocate memory for child_strings_array.")
  *             child_lengths_array = <int*>malloc(child_num_strings * sizeof(int))
+ *             if child_lengths_array == NULL:             # <<<<<<<<<<<<<<
+ *                 free(child_strings_array)
+ *                 raise MemoryError("Failed to allocate memory for child_lengths_array.")
+ */
+    __pyx_t_5 = (__pyx_v_child_lengths_array == NULL);
+    if (unlikely(__pyx_t_5)) {
+
+      /* "elaina_triehard/impl_c.pyx":264
+ *             child_lengths_array = <int*>malloc(child_num_strings * sizeof(int))
+ *             if child_lengths_array == NULL:
+ *                 free(child_strings_array)             # <<<<<<<<<<<<<<
+ *                 raise MemoryError("Failed to allocate memory for child_lengths_array.")
+ *             for j in range(child_num_strings):
+ */
+      free(__pyx_v_child_strings_array);
+
+      /* "elaina_triehard/impl_c.pyx":265
+ *             if child_lengths_array == NULL:
+ *                 free(child_strings_array)
+ *                 raise MemoryError("Failed to allocate memory for child_lengths_array.")             # <<<<<<<<<<<<<<
+ *             for j in range(child_num_strings):
+ *                 child_strings_array[j] = child_strings_list[j]
+ */
+      __pyx_t_6 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__9, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 265, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_6);
+      __Pyx_Raise(__pyx_t_6, 0, 0, 0);
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __PYX_ERR(0, 265, __pyx_L1_error)
+
+      /* "elaina_triehard/impl_c.pyx":263
+ *                 raise MemoryError("Failed to allocate memory for child_strings_array.")
+ *             child_lengths_array = <int*>malloc(child_num_strings * sizeof(int))
+ *             if child_lengths_array == NULL:             # <<<<<<<<<<<<<<
+ *                 free(child_strings_array)
+ *                 raise MemoryError("Failed to allocate memory for child_lengths_array.")
+ */
+    }
+
+    /* "elaina_triehard/impl_c.pyx":266
+ *                 free(child_strings_array)
+ *                 raise MemoryError("Failed to allocate memory for child_lengths_array.")
  *             for j in range(child_num_strings):             # <<<<<<<<<<<<<<
  *                 child_strings_array[j] = child_strings_list[j]
  *                 child_lengths_array[j] = child_lengths_list[j]
  */
-    __pyx_t_11 = __pyx_v_child_num_strings;
-    __pyx_t_12 = __pyx_t_11;
-    for (__pyx_t_13 = 0; __pyx_t_13 < __pyx_t_12; __pyx_t_13+=1) {
-      __pyx_v_j = __pyx_t_13;
+    __pyx_t_12 = __pyx_v_child_num_strings;
+    __pyx_t_13 = __pyx_t_12;
+    for (__pyx_t_14 = 0; __pyx_t_14 < __pyx_t_13; __pyx_t_14+=1) {
+      __pyx_v_j = __pyx_t_14;
 
-      /* "elaina_triehard/impl_c.pyx":227
- *             child_lengths_array = <int*>malloc(child_num_strings * sizeof(int))
+      /* "elaina_triehard/impl_c.pyx":267
+ *                 raise MemoryError("Failed to allocate memory for child_lengths_array.")
  *             for j in range(child_num_strings):
  *                 child_strings_array[j] = child_strings_list[j]             # <<<<<<<<<<<<<<
  *                 child_lengths_array[j] = child_lengths_list[j]
- *             self._build_node(child_node_index, child_strings_array, child_lengths_array, child_num_strings, position + 1)
+ *             try:
  */
       if (unlikely(__pyx_v_child_strings_list == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 227, __pyx_L1_error)
+        __PYX_ERR(0, 267, __pyx_L1_error)
       }
-      __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_v_child_strings_list, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 227, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_v_child_strings_list, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 267, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_14 = __Pyx_PyObject_AsWritableUString(__pyx_t_6); if (unlikely((!__pyx_t_14) && PyErr_Occurred())) __PYX_ERR(0, 227, __pyx_L1_error)
-      (__pyx_v_child_strings_array[__pyx_v_j]) = __pyx_t_14;
+      __pyx_t_15 = __Pyx_PyObject_AsWritableUString(__pyx_t_6); if (unlikely((!__pyx_t_15) && PyErr_Occurred())) __PYX_ERR(0, 267, __pyx_L1_error)
+      (__pyx_v_child_strings_array[__pyx_v_j]) = __pyx_t_15;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-      /* "elaina_triehard/impl_c.pyx":228
+      /* "elaina_triehard/impl_c.pyx":268
  *             for j in range(child_num_strings):
  *                 child_strings_array[j] = child_strings_list[j]
  *                 child_lengths_array[j] = child_lengths_list[j]             # <<<<<<<<<<<<<<
- *             self._build_node(child_node_index, child_strings_array, child_lengths_array, child_num_strings, position + 1)
- *             free(child_strings_array)
+ *             try:
+ *                 self._build_node(child_node_index, child_strings_array, child_lengths_array, child_num_strings, position + 1)
  */
       if (unlikely(__pyx_v_child_lengths_list == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 228, __pyx_L1_error)
+        __PYX_ERR(0, 268, __pyx_L1_error)
       }
-      __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_v_child_lengths_list, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 228, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_v_child_lengths_list, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 268, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_6); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 228, __pyx_L1_error)
+      __pyx_t_16 = __Pyx_PyInt_As_int(__pyx_t_6); if (unlikely((__pyx_t_16 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 268, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      (__pyx_v_child_lengths_array[__pyx_v_j]) = __pyx_t_15;
+      (__pyx_v_child_lengths_array[__pyx_v_j]) = __pyx_t_16;
     }
 
-    /* "elaina_triehard/impl_c.pyx":229
+    /* "elaina_triehard/impl_c.pyx":269
  *                 child_strings_array[j] = child_strings_list[j]
  *                 child_lengths_array[j] = child_lengths_list[j]
- *             self._build_node(child_node_index, child_strings_array, child_lengths_array, child_num_strings, position + 1)             # <<<<<<<<<<<<<<
- *             free(child_strings_array)
- *             free(child_lengths_array)
+ *             try:             # <<<<<<<<<<<<<<
+ *                 self._build_node(child_node_index, child_strings_array, child_lengths_array, child_num_strings, position + 1)
+ *             finally:
  */
-    ((struct __pyx_vtabstruct_15elaina_triehard_6impl_c_TrieHard *)__pyx_v_self->__pyx_vtab)->_build_node(__pyx_v_self, __pyx_v_child_node_index, __pyx_v_child_strings_array, __pyx_v_child_lengths_array, __pyx_v_child_num_strings, (__pyx_v_position + 1)); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 229, __pyx_L1_error)
+    /*try:*/ {
 
-    /* "elaina_triehard/impl_c.pyx":230
+      /* "elaina_triehard/impl_c.pyx":270
  *                 child_lengths_array[j] = child_lengths_list[j]
- *             self._build_node(child_node_index, child_strings_array, child_lengths_array, child_num_strings, position + 1)
- *             free(child_strings_array)             # <<<<<<<<<<<<<<
- *             free(child_lengths_array)
+ *             try:
+ *                 self._build_node(child_node_index, child_strings_array, child_lengths_array, child_num_strings, position + 1)             # <<<<<<<<<<<<<<
+ *             finally:
+ *                 free(child_strings_array)
+ */
+      ((struct __pyx_vtabstruct_15elaina_triehard_6impl_c_TrieHard *)__pyx_v_self->__pyx_vtab)->_build_node(__pyx_v_self, __pyx_v_child_node_index, __pyx_v_child_strings_array, __pyx_v_child_lengths_array, __pyx_v_child_num_strings, (__pyx_v_position + 1)); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 270, __pyx_L28_error)
+    }
+
+    /* "elaina_triehard/impl_c.pyx":272
+ *                 self._build_node(child_node_index, child_strings_array, child_lengths_array, child_num_strings, position + 1)
+ *             finally:
+ *                 free(child_strings_array)             # <<<<<<<<<<<<<<
+ *                 free(child_lengths_array)
  * 
  */
-    free(__pyx_v_child_strings_array);
+    /*finally:*/ {
+      /*normal exit:*/{
+        free(__pyx_v_child_strings_array);
 
-    /* "elaina_triehard/impl_c.pyx":231
- *             self._build_node(child_node_index, child_strings_array, child_lengths_array, child_num_strings, position + 1)
- *             free(child_strings_array)
- *             free(child_lengths_array)             # <<<<<<<<<<<<<<
+        /* "elaina_triehard/impl_c.pyx":273
+ *             finally:
+ *                 free(child_strings_array)
+ *                 free(child_lengths_array)             # <<<<<<<<<<<<<<
  * 
  *     cpdef str get_closest_prefix(self, str key):
  */
-    free(__pyx_v_child_lengths_array);
+        free(__pyx_v_child_lengths_array);
+        goto __pyx_L29;
+      }
+      __pyx_L28_error:;
+      /*exception exit:*/{
+        __Pyx_PyThreadState_declare
+        __Pyx_PyThreadState_assign
+        __pyx_t_18 = 0; __pyx_t_19 = 0; __pyx_t_20 = 0; __pyx_t_21 = 0; __pyx_t_22 = 0; __pyx_t_23 = 0;
+        __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
+        __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+        __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
+        if (PY_MAJOR_VERSION >= 3) __Pyx_ExceptionSwap(&__pyx_t_21, &__pyx_t_22, &__pyx_t_23);
+        if ((PY_MAJOR_VERSION < 3) || unlikely(__Pyx_GetException(&__pyx_t_18, &__pyx_t_19, &__pyx_t_20) < 0)) __Pyx_ErrFetch(&__pyx_t_18, &__pyx_t_19, &__pyx_t_20);
+        __Pyx_XGOTREF(__pyx_t_18);
+        __Pyx_XGOTREF(__pyx_t_19);
+        __Pyx_XGOTREF(__pyx_t_20);
+        __Pyx_XGOTREF(__pyx_t_21);
+        __Pyx_XGOTREF(__pyx_t_22);
+        __Pyx_XGOTREF(__pyx_t_23);
+        __pyx_t_12 = __pyx_lineno; __pyx_t_13 = __pyx_clineno; __pyx_t_17 = __pyx_filename;
+        {
+
+          /* "elaina_triehard/impl_c.pyx":272
+ *                 self._build_node(child_node_index, child_strings_array, child_lengths_array, child_num_strings, position + 1)
+ *             finally:
+ *                 free(child_strings_array)             # <<<<<<<<<<<<<<
+ *                 free(child_lengths_array)
+ * 
+ */
+          free(__pyx_v_child_strings_array);
+
+          /* "elaina_triehard/impl_c.pyx":273
+ *             finally:
+ *                 free(child_strings_array)
+ *                 free(child_lengths_array)             # <<<<<<<<<<<<<<
+ * 
+ *     cpdef str get_closest_prefix(self, str key):
+ */
+          free(__pyx_v_child_lengths_array);
+        }
+        if (PY_MAJOR_VERSION >= 3) {
+          __Pyx_XGIVEREF(__pyx_t_21);
+          __Pyx_XGIVEREF(__pyx_t_22);
+          __Pyx_XGIVEREF(__pyx_t_23);
+          __Pyx_ExceptionReset(__pyx_t_21, __pyx_t_22, __pyx_t_23);
+        }
+        __Pyx_XGIVEREF(__pyx_t_18);
+        __Pyx_XGIVEREF(__pyx_t_19);
+        __Pyx_XGIVEREF(__pyx_t_20);
+        __Pyx_ErrRestore(__pyx_t_18, __pyx_t_19, __pyx_t_20);
+        __pyx_t_18 = 0; __pyx_t_19 = 0; __pyx_t_20 = 0; __pyx_t_21 = 0; __pyx_t_22 = 0; __pyx_t_23 = 0;
+        __pyx_lineno = __pyx_t_12; __pyx_clineno = __pyx_t_13; __pyx_filename = __pyx_t_17;
+        goto __pyx_L1_error;
+      }
+      __pyx_L29:;
+    }
   }
 
-  /* "elaina_triehard/impl_c.pyx":132
+  /* "elaina_triehard/impl_c.pyx":158
  *         self._build_node(0, self.bytes_strings, self.bytes_lengths, self.num_strings, 0)
  * 
  *     cdef void _build_node(self, int node_index, unsigned char** strings, int* lengths, int num_strings, int position):             # <<<<<<<<<<<<<<
@@ -4089,8 +4904,8 @@ static void __pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node(struct __pyx
   __Pyx_RefNannyFinishContext();
 }
 
-/* "elaina_triehard/impl_c.pyx":233
- *             free(child_lengths_array)
+/* "elaina_triehard/impl_c.pyx":275
+ *                 free(child_lengths_array)
  * 
  *     cpdef str get_closest_prefix(self, str key):             # <<<<<<<<<<<<<<
  *         """
@@ -4141,7 +4956,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_get_closest_prefix); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 233, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_get_closest_prefix); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 275, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       if (!__Pyx_IsSameCFunction(__pyx_t_1, (void*) __pyx_pw_15elaina_triehard_6impl_c_8TrieHard_3get_closest_prefix)) {
         __Pyx_XDECREF(__pyx_r);
@@ -4164,11 +4979,11 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
           PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_v_key};
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 233, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 275, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
-        if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", __pyx_t_2))) __PYX_ERR(0, 233, __pyx_L1_error)
+        if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", __pyx_t_2))) __PYX_ERR(0, 275, __pyx_L1_error)
         __pyx_r = ((PyObject*)__pyx_t_2);
         __pyx_t_2 = 0;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -4187,7 +5002,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
     #endif
   }
 
-  /* "elaina_triehard/impl_c.pyx":247
+  /* "elaina_triehard/impl_c.pyx":289
  *         cdef unsigned long long less_significant_bits
  *         cdef int child_index
  *         cdef char* matched_word = NULL             # <<<<<<<<<<<<<<
@@ -4196,7 +5011,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
   __pyx_v_matched_word = NULL;
 
-  /* "elaina_triehard/impl_c.pyx":249
+  /* "elaina_triehard/impl_c.pyx":291
  *         cdef char* matched_word = NULL
  * 
  *         position = 0             # <<<<<<<<<<<<<<
@@ -4205,7 +5020,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
   __pyx_v_position = 0;
 
-  /* "elaina_triehard/impl_c.pyx":250
+  /* "elaina_triehard/impl_c.pyx":292
  * 
  *         position = 0
  *         key_bytes = key.encode('utf-8')             # <<<<<<<<<<<<<<
@@ -4214,14 +5029,14 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
   if (unlikely(__pyx_v_key == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "encode");
-    __PYX_ERR(0, 250, __pyx_L1_error)
+    __PYX_ERR(0, 292, __pyx_L1_error)
   }
-  __pyx_t_1 = PyUnicode_AsUTF8String(__pyx_v_key); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __pyx_t_1 = PyUnicode_AsUTF8String(__pyx_v_key); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 292, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_key_bytes = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "elaina_triehard/impl_c.pyx":251
+  /* "elaina_triehard/impl_c.pyx":293
  *         position = 0
  *         key_bytes = key.encode('utf-8')
  *         key_length = len(key_bytes)             # <<<<<<<<<<<<<<
@@ -4230,12 +5045,12 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
   if (unlikely(__pyx_v_key_bytes == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 251, __pyx_L1_error)
+    __PYX_ERR(0, 293, __pyx_L1_error)
   }
-  __pyx_t_6 = __Pyx_PyBytes_GET_SIZE(__pyx_v_key_bytes); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 251, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyBytes_GET_SIZE(__pyx_v_key_bytes); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 293, __pyx_L1_error)
   __pyx_v_key_length = __pyx_t_6;
 
-  /* "elaina_triehard/impl_c.pyx":252
+  /* "elaina_triehard/impl_c.pyx":294
  *         key_bytes = key.encode('utf-8')
  *         key_length = len(key_bytes)
  *         key_ptr = <unsigned char*>key_bytes             # <<<<<<<<<<<<<<
@@ -4244,12 +5059,12 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
   if (unlikely(__pyx_v_key_bytes == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "expected bytes, NoneType found");
-    __PYX_ERR(0, 252, __pyx_L1_error)
+    __PYX_ERR(0, 294, __pyx_L1_error)
   }
-  __pyx_t_7 = __Pyx_PyBytes_AsWritableUString(__pyx_v_key_bytes); if (unlikely((!__pyx_t_7) && PyErr_Occurred())) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyBytes_AsWritableUString(__pyx_v_key_bytes); if (unlikely((!__pyx_t_7) && PyErr_Occurred())) __PYX_ERR(0, 294, __pyx_L1_error)
   __pyx_v_key_ptr = ((unsigned char *)__pyx_t_7);
 
-  /* "elaina_triehard/impl_c.pyx":254
+  /* "elaina_triehard/impl_c.pyx":296
  *         key_ptr = <unsigned char*>key_bytes
  * 
  *         if self.nodes == NULL:             # <<<<<<<<<<<<<<
@@ -4259,7 +5074,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
   __pyx_t_8 = (__pyx_v_self->nodes == NULL);
   if (__pyx_t_8) {
 
-    /* "elaina_triehard/impl_c.pyx":255
+    /* "elaina_triehard/impl_c.pyx":297
  * 
  *         if self.nodes == NULL:
  *             return ''             # <<<<<<<<<<<<<<
@@ -4267,11 +5082,11 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  *         current_node = &self.nodes[0]
  */
     __Pyx_XDECREF(__pyx_r);
-    __Pyx_INCREF(__pyx_kp_u_);
-    __pyx_r = __pyx_kp_u_;
+    __Pyx_INCREF(__pyx_kp_u__10);
+    __pyx_r = __pyx_kp_u__10;
     goto __pyx_L0;
 
-    /* "elaina_triehard/impl_c.pyx":254
+    /* "elaina_triehard/impl_c.pyx":296
  *         key_ptr = <unsigned char*>key_bytes
  * 
  *         if self.nodes == NULL:             # <<<<<<<<<<<<<<
@@ -4280,7 +5095,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
   }
 
-  /* "elaina_triehard/impl_c.pyx":257
+  /* "elaina_triehard/impl_c.pyx":299
  *             return ''
  * 
  *         current_node = &self.nodes[0]             # <<<<<<<<<<<<<<
@@ -4289,7 +5104,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
   __pyx_v_current_node = (&(__pyx_v_self->nodes[0]));
 
-  /* "elaina_triehard/impl_c.pyx":258
+  /* "elaina_triehard/impl_c.pyx":300
  * 
  *         current_node = &self.nodes[0]
  *         while position < key_length:             # <<<<<<<<<<<<<<
@@ -4300,7 +5115,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
     __pyx_t_8 = (__pyx_v_position < __pyx_v_key_length);
     if (!__pyx_t_8) break;
 
-    /* "elaina_triehard/impl_c.pyx":259
+    /* "elaina_triehard/impl_c.pyx":301
  *         current_node = &self.nodes[0]
  *         while position < key_length:
  *             if current_node.is_terminal and current_node.word != NULL:             # <<<<<<<<<<<<<<
@@ -4317,7 +5132,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
     __pyx_L7_bool_binop_done:;
     if (__pyx_t_8) {
 
-      /* "elaina_triehard/impl_c.pyx":260
+      /* "elaina_triehard/impl_c.pyx":302
  *         while position < key_length:
  *             if current_node.is_terminal and current_node.word != NULL:
  *                 matched_word = current_node.word             # <<<<<<<<<<<<<<
@@ -4327,7 +5142,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
       __pyx_t_10 = __pyx_v_current_node->word;
       __pyx_v_matched_word = __pyx_t_10;
 
-      /* "elaina_triehard/impl_c.pyx":259
+      /* "elaina_triehard/impl_c.pyx":301
  *         current_node = &self.nodes[0]
  *         while position < key_length:
  *             if current_node.is_terminal and current_node.word != NULL:             # <<<<<<<<<<<<<<
@@ -4336,7 +5151,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
     }
 
-    /* "elaina_triehard/impl_c.pyx":261
+    /* "elaina_triehard/impl_c.pyx":303
  *             if current_node.is_terminal and current_node.word != NULL:
  *                 matched_word = current_node.word
  *             b = key_ptr[position]             # <<<<<<<<<<<<<<
@@ -4345,7 +5160,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
     __pyx_v_b = (__pyx_v_key_ptr[__pyx_v_position]);
 
-    /* "elaina_triehard/impl_c.pyx":262
+    /* "elaina_triehard/impl_c.pyx":304
  *                 matched_word = current_node.word
  *             b = key_ptr[position]
  *             input_mask = self.byte_to_mask[b]             # <<<<<<<<<<<<<<
@@ -4354,7 +5169,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
     __pyx_v_input_mask = (__pyx_v_self->byte_to_mask[__pyx_v_b]);
 
-    /* "elaina_triehard/impl_c.pyx":263
+    /* "elaina_triehard/impl_c.pyx":305
  *             b = key_ptr[position]
  *             input_mask = self.byte_to_mask[b]
  *             if input_mask == 0 or (current_node.mask & input_mask) == 0:             # <<<<<<<<<<<<<<
@@ -4372,7 +5187,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
     __pyx_L10_bool_binop_done:;
     if (__pyx_t_8) {
 
-      /* "elaina_triehard/impl_c.pyx":264
+      /* "elaina_triehard/impl_c.pyx":306
  *             input_mask = self.byte_to_mask[b]
  *             if input_mask == 0 or (current_node.mask & input_mask) == 0:
  *                 break  #             # <<<<<<<<<<<<<<
@@ -4381,7 +5196,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
       goto __pyx_L5_break;
 
-      /* "elaina_triehard/impl_c.pyx":263
+      /* "elaina_triehard/impl_c.pyx":305
  *             b = key_ptr[position]
  *             input_mask = self.byte_to_mask[b]
  *             if input_mask == 0 or (current_node.mask & input_mask) == 0:             # <<<<<<<<<<<<<<
@@ -4390,7 +5205,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
     }
 
-    /* "elaina_triehard/impl_c.pyx":265
+    /* "elaina_triehard/impl_c.pyx":307
  *             if input_mask == 0 or (current_node.mask & input_mask) == 0:
  *                 break  #
  *             less_significant_bits = (input_mask - 1) & current_node.mask             # <<<<<<<<<<<<<<
@@ -4399,17 +5214,17 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
     __pyx_v_less_significant_bits = ((__pyx_v_input_mask - 1) & __pyx_v_current_node->mask);
 
-    /* "elaina_triehard/impl_c.pyx":266
+    /* "elaina_triehard/impl_c.pyx":308
  *                 break  #
  *             less_significant_bits = (input_mask - 1) & current_node.mask
  *             child_index = popcount(less_significant_bits)             # <<<<<<<<<<<<<<
  *             current_node = &self.nodes[current_node.children_indices[child_index]]
  *             position += 1
  */
-    __pyx_t_11 = __pyx_f_15elaina_triehard_6impl_c_popcount(__pyx_v_less_significant_bits); if (unlikely(__pyx_t_11 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 266, __pyx_L1_error)
+    __pyx_t_11 = __pyx_f_15elaina_triehard_6impl_c_popcount(__pyx_v_less_significant_bits); if (unlikely(__pyx_t_11 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 308, __pyx_L1_error)
     __pyx_v_child_index = __pyx_t_11;
 
-    /* "elaina_triehard/impl_c.pyx":267
+    /* "elaina_triehard/impl_c.pyx":309
  *             less_significant_bits = (input_mask - 1) & current_node.mask
  *             child_index = popcount(less_significant_bits)
  *             current_node = &self.nodes[current_node.children_indices[child_index]]             # <<<<<<<<<<<<<<
@@ -4418,7 +5233,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
     __pyx_v_current_node = (&(__pyx_v_self->nodes[(__pyx_v_current_node->children_indices[__pyx_v_child_index])]));
 
-    /* "elaina_triehard/impl_c.pyx":268
+    /* "elaina_triehard/impl_c.pyx":310
  *             child_index = popcount(less_significant_bits)
  *             current_node = &self.nodes[current_node.children_indices[child_index]]
  *             position += 1             # <<<<<<<<<<<<<<
@@ -4429,7 +5244,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
   }
   __pyx_L5_break:;
 
-  /* "elaina_triehard/impl_c.pyx":271
+  /* "elaina_triehard/impl_c.pyx":313
  * 
  *         #
  *         if current_node.is_terminal and current_node.word != NULL:             # <<<<<<<<<<<<<<
@@ -4446,7 +5261,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
   __pyx_L13_bool_binop_done:;
   if (__pyx_t_8) {
 
-    /* "elaina_triehard/impl_c.pyx":272
+    /* "elaina_triehard/impl_c.pyx":314
  *         #
  *         if current_node.is_terminal and current_node.word != NULL:
  *             matched_word = current_node.word             # <<<<<<<<<<<<<<
@@ -4456,7 +5271,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
     __pyx_t_10 = __pyx_v_current_node->word;
     __pyx_v_matched_word = __pyx_t_10;
 
-    /* "elaina_triehard/impl_c.pyx":271
+    /* "elaina_triehard/impl_c.pyx":313
  * 
  *         #
  *         if current_node.is_terminal and current_node.word != NULL:             # <<<<<<<<<<<<<<
@@ -4465,7 +5280,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
   }
 
-  /* "elaina_triehard/impl_c.pyx":274
+  /* "elaina_triehard/impl_c.pyx":316
  *             matched_word = current_node.word
  * 
  *         if matched_word != NULL:             # <<<<<<<<<<<<<<
@@ -4475,7 +5290,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
   __pyx_t_8 = (__pyx_v_matched_word != NULL);
   if (__pyx_t_8) {
 
-    /* "elaina_triehard/impl_c.pyx":276
+    /* "elaina_triehard/impl_c.pyx":318
  *         if matched_word != NULL:
  *             #
  *             return PyUnicode_FromString(matched_word)             # <<<<<<<<<<<<<<
@@ -4483,13 +5298,13 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  *             return ''
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_1 = PyUnicode_FromString(__pyx_v_matched_word); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 276, __pyx_L1_error)
+    __pyx_t_1 = PyUnicode_FromString(__pyx_v_matched_word); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 318, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_r = ((PyObject*)__pyx_t_1);
     __pyx_t_1 = 0;
     goto __pyx_L0;
 
-    /* "elaina_triehard/impl_c.pyx":274
+    /* "elaina_triehard/impl_c.pyx":316
  *             matched_word = current_node.word
  * 
  *         if matched_word != NULL:             # <<<<<<<<<<<<<<
@@ -4498,7 +5313,7 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
   }
 
-  /* "elaina_triehard/impl_c.pyx":278
+  /* "elaina_triehard/impl_c.pyx":320
  *             return PyUnicode_FromString(matched_word)
  *         else:
  *             return ''             # <<<<<<<<<<<<<<
@@ -4507,13 +5322,13 @@ static PyObject *__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(
  */
   /*else*/ {
     __Pyx_XDECREF(__pyx_r);
-    __Pyx_INCREF(__pyx_kp_u_);
-    __pyx_r = __pyx_kp_u_;
+    __Pyx_INCREF(__pyx_kp_u__10);
+    __pyx_r = __pyx_kp_u__10;
     goto __pyx_L0;
   }
 
-  /* "elaina_triehard/impl_c.pyx":233
- *             free(child_lengths_array)
+  /* "elaina_triehard/impl_c.pyx":275
+ *                 free(child_lengths_array)
  * 
  *     cpdef str get_closest_prefix(self, str key):             # <<<<<<<<<<<<<<
  *         """
@@ -4543,7 +5358,7 @@ PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_15elaina_triehard_6impl_c_8TrieHard_2get_closest_prefix, "\n        \346\216\245\346\224\266\344\270\200\344\270\252\345\255\227\347\254\246\344\270\262\357\274\214\350\277\224\345\233\236 Trie \344\270\255\344\270\216\344\271\213\345\214\271\351\205\215\347\232\204\345\256\214\346\225\264\345\215\225\350\257\215\343\200\202\n        \345\246\202\346\236\234\346\262\241\346\234\211\345\214\271\351\205\215\347\232\204\345\215\225\350\257\215\357\274\214\345\210\231\350\277\224\345\233\236\347\251\272\345\255\227\350\212\202\344\270\262\343\200\202\n        ");
+PyDoc_STRVAR(__pyx_doc_15elaina_triehard_6impl_c_8TrieHard_2get_closest_prefix, "\n        \346\216\245\346\224\266\344\270\200\344\270\252\345\255\227\347\254\246\344\270\262\357\274\214\350\277\224\345\233\236 Trie \344\270\255\344\270\216\344\271\213\345\214\271\351\205\215\347\232\204\345\256\214\346\225\264\345\215\225\350\257\215\343\200\202\n        \345\246\202\346\236\234\346\262\241\346\234\211\345\214\271\351\205\215\347\232\204\345\215\225\350\257\215\357\274\214\345\210\231\350\277\224\345\233\236\347\251\272\345\255\227\347\254\246\344\270\262\343\200\202\n        ");
 static PyMethodDef __pyx_mdef_15elaina_triehard_6impl_c_8TrieHard_3get_closest_prefix = {"get_closest_prefix", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_15elaina_triehard_6impl_c_8TrieHard_3get_closest_prefix, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_15elaina_triehard_6impl_c_8TrieHard_2get_closest_prefix};
 static PyObject *__pyx_pw_15elaina_triehard_6impl_c_8TrieHard_3get_closest_prefix(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
@@ -4589,12 +5404,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 233, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 275, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "get_closest_prefix") < 0)) __PYX_ERR(0, 233, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "get_closest_prefix") < 0)) __PYX_ERR(0, 275, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -4605,7 +5420,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_closest_prefix", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 233, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get_closest_prefix", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 275, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -4619,7 +5434,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_key), (&PyUnicode_Type), 1, "key", 1))) __PYX_ERR(0, 233, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_key), (&PyUnicode_Type), 1, "key", 1))) __PYX_ERR(0, 275, __pyx_L1_error)
   __pyx_r = __pyx_pf_15elaina_triehard_6impl_c_8TrieHard_2get_closest_prefix(((struct __pyx_obj_15elaina_triehard_6impl_c_TrieHard *)__pyx_v_self), __pyx_v_key);
 
   /* function exit code */
@@ -4646,7 +5461,7 @@ static PyObject *__pyx_pf_15elaina_triehard_6impl_c_8TrieHard_2get_closest_prefi
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_closest_prefix", 1);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(__pyx_v_self, __pyx_v_key, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix(__pyx_v_self, __pyx_v_key, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 275, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -4663,7 +5478,7 @@ static PyObject *__pyx_pf_15elaina_triehard_6impl_c_8TrieHard_2get_closest_prefi
   return __pyx_r;
 }
 
-/* "elaina_triehard/impl_c.pyx":280
+/* "elaina_triehard/impl_c.pyx":322
  *             return ''
  * 
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
@@ -4690,30 +5505,39 @@ static void __pyx_pf_15elaina_triehard_6impl_c_8TrieHard_4__dealloc__(struct __p
   int __pyx_t_2;
   int __pyx_t_3;
   int __pyx_t_4;
+  int __pyx_t_5;
 
-  /* "elaina_triehard/impl_c.pyx":285
+  /* "elaina_triehard/impl_c.pyx":327
  *         """
  *         cdef int i
- *         if self.nodes != NULL:             # <<<<<<<<<<<<<<
+ *         if self.nodes != NULL and self.num_nodes > 0:             # <<<<<<<<<<<<<<
  *             #  children_indices  word
  *             for i in range(self.num_nodes):
  */
-  __pyx_t_1 = (__pyx_v_self->nodes != NULL);
+  __pyx_t_2 = (__pyx_v_self->nodes != NULL);
+  if (__pyx_t_2) {
+  } else {
+    __pyx_t_1 = __pyx_t_2;
+    goto __pyx_L4_bool_binop_done;
+  }
+  __pyx_t_2 = (__pyx_v_self->num_nodes > 0);
+  __pyx_t_1 = __pyx_t_2;
+  __pyx_L4_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "elaina_triehard/impl_c.pyx":287
- *         if self.nodes != NULL:
+    /* "elaina_triehard/impl_c.pyx":329
+ *         if self.nodes != NULL and self.num_nodes > 0:
  *             #  children_indices  word
  *             for i in range(self.num_nodes):             # <<<<<<<<<<<<<<
  *                 if self.nodes[i].children_indices != NULL:
  *                     free(self.nodes[i].children_indices)
  */
-    __pyx_t_2 = __pyx_v_self->num_nodes;
-    __pyx_t_3 = __pyx_t_2;
-    for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
-      __pyx_v_i = __pyx_t_4;
+    __pyx_t_3 = __pyx_v_self->num_nodes;
+    __pyx_t_4 = __pyx_t_3;
+    for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
+      __pyx_v_i = __pyx_t_5;
 
-      /* "elaina_triehard/impl_c.pyx":288
+      /* "elaina_triehard/impl_c.pyx":330
  *             #  children_indices  word
  *             for i in range(self.num_nodes):
  *                 if self.nodes[i].children_indices != NULL:             # <<<<<<<<<<<<<<
@@ -4723,7 +5547,7 @@ static void __pyx_pf_15elaina_triehard_6impl_c_8TrieHard_4__dealloc__(struct __p
       __pyx_t_1 = ((__pyx_v_self->nodes[__pyx_v_i]).children_indices != NULL);
       if (__pyx_t_1) {
 
-        /* "elaina_triehard/impl_c.pyx":289
+        /* "elaina_triehard/impl_c.pyx":331
  *             for i in range(self.num_nodes):
  *                 if self.nodes[i].children_indices != NULL:
  *                     free(self.nodes[i].children_indices)             # <<<<<<<<<<<<<<
@@ -4732,7 +5556,7 @@ static void __pyx_pf_15elaina_triehard_6impl_c_8TrieHard_4__dealloc__(struct __p
  */
         free((__pyx_v_self->nodes[__pyx_v_i]).children_indices);
 
-        /* "elaina_triehard/impl_c.pyx":290
+        /* "elaina_triehard/impl_c.pyx":332
  *                 if self.nodes[i].children_indices != NULL:
  *                     free(self.nodes[i].children_indices)
  *                     self.nodes[i].children_indices = NULL             # <<<<<<<<<<<<<<
@@ -4741,7 +5565,7 @@ static void __pyx_pf_15elaina_triehard_6impl_c_8TrieHard_4__dealloc__(struct __p
  */
         (__pyx_v_self->nodes[__pyx_v_i]).children_indices = NULL;
 
-        /* "elaina_triehard/impl_c.pyx":288
+        /* "elaina_triehard/impl_c.pyx":330
  *             #  children_indices  word
  *             for i in range(self.num_nodes):
  *                 if self.nodes[i].children_indices != NULL:             # <<<<<<<<<<<<<<
@@ -4750,7 +5574,7 @@ static void __pyx_pf_15elaina_triehard_6impl_c_8TrieHard_4__dealloc__(struct __p
  */
       }
 
-      /* "elaina_triehard/impl_c.pyx":291
+      /* "elaina_triehard/impl_c.pyx":333
  *                     free(self.nodes[i].children_indices)
  *                     self.nodes[i].children_indices = NULL
  *                 if self.nodes[i].word != NULL:             # <<<<<<<<<<<<<<
@@ -4760,7 +5584,7 @@ static void __pyx_pf_15elaina_triehard_6impl_c_8TrieHard_4__dealloc__(struct __p
       __pyx_t_1 = ((__pyx_v_self->nodes[__pyx_v_i]).word != NULL);
       if (__pyx_t_1) {
 
-        /* "elaina_triehard/impl_c.pyx":292
+        /* "elaina_triehard/impl_c.pyx":334
  *                     self.nodes[i].children_indices = NULL
  *                 if self.nodes[i].word != NULL:
  *                     free(self.nodes[i].word)             # <<<<<<<<<<<<<<
@@ -4769,7 +5593,7 @@ static void __pyx_pf_15elaina_triehard_6impl_c_8TrieHard_4__dealloc__(struct __p
  */
         free((__pyx_v_self->nodes[__pyx_v_i]).word);
 
-        /* "elaina_triehard/impl_c.pyx":293
+        /* "elaina_triehard/impl_c.pyx":335
  *                 if self.nodes[i].word != NULL:
  *                     free(self.nodes[i].word)
  *                     self.nodes[i].word = NULL             # <<<<<<<<<<<<<<
@@ -4778,7 +5602,7 @@ static void __pyx_pf_15elaina_triehard_6impl_c_8TrieHard_4__dealloc__(struct __p
  */
         (__pyx_v_self->nodes[__pyx_v_i]).word = NULL;
 
-        /* "elaina_triehard/impl_c.pyx":291
+        /* "elaina_triehard/impl_c.pyx":333
  *                     free(self.nodes[i].children_indices)
  *                     self.nodes[i].children_indices = NULL
  *                 if self.nodes[i].word != NULL:             # <<<<<<<<<<<<<<
@@ -4788,114 +5612,149 @@ static void __pyx_pf_15elaina_triehard_6impl_c_8TrieHard_4__dealloc__(struct __p
       }
     }
 
-    /* "elaina_triehard/impl_c.pyx":294
+    /* "elaina_triehard/impl_c.pyx":336
  *                     free(self.nodes[i].word)
  *                     self.nodes[i].word = NULL
  *             free(self.nodes)             # <<<<<<<<<<<<<<
  *             self.nodes = NULL
- *         if self.bytes_strings != NULL:
+ *             self.num_nodes = 0
  */
     free(__pyx_v_self->nodes);
 
-    /* "elaina_triehard/impl_c.pyx":295
+    /* "elaina_triehard/impl_c.pyx":337
  *                     self.nodes[i].word = NULL
  *             free(self.nodes)
  *             self.nodes = NULL             # <<<<<<<<<<<<<<
- *         if self.bytes_strings != NULL:
- *             for i in range(self.num_strings):
+ *             self.num_nodes = 0
+ *         if self.bytes_strings != NULL and self.num_strings > 0:
  */
     __pyx_v_self->nodes = NULL;
 
-    /* "elaina_triehard/impl_c.pyx":285
+    /* "elaina_triehard/impl_c.pyx":338
+ *             free(self.nodes)
+ *             self.nodes = NULL
+ *             self.num_nodes = 0             # <<<<<<<<<<<<<<
+ *         if self.bytes_strings != NULL and self.num_strings > 0:
+ *             for i in range(self.num_strings):
+ */
+    __pyx_v_self->num_nodes = 0;
+
+    /* "elaina_triehard/impl_c.pyx":327
  *         """
  *         cdef int i
- *         if self.nodes != NULL:             # <<<<<<<<<<<<<<
+ *         if self.nodes != NULL and self.num_nodes > 0:             # <<<<<<<<<<<<<<
  *             #  children_indices  word
  *             for i in range(self.num_nodes):
  */
   }
 
-  /* "elaina_triehard/impl_c.pyx":296
- *             free(self.nodes)
+  /* "elaina_triehard/impl_c.pyx":339
  *             self.nodes = NULL
- *         if self.bytes_strings != NULL:             # <<<<<<<<<<<<<<
+ *             self.num_nodes = 0
+ *         if self.bytes_strings != NULL and self.num_strings > 0:             # <<<<<<<<<<<<<<
  *             for i in range(self.num_strings):
  *                 if self.bytes_strings[i] != NULL:
  */
-  __pyx_t_1 = (__pyx_v_self->bytes_strings != NULL);
+  __pyx_t_2 = (__pyx_v_self->bytes_strings != NULL);
+  if (__pyx_t_2) {
+  } else {
+    __pyx_t_1 = __pyx_t_2;
+    goto __pyx_L11_bool_binop_done;
+  }
+  __pyx_t_2 = (__pyx_v_self->num_strings > 0);
+  __pyx_t_1 = __pyx_t_2;
+  __pyx_L11_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "elaina_triehard/impl_c.pyx":297
- *             self.nodes = NULL
- *         if self.bytes_strings != NULL:
+    /* "elaina_triehard/impl_c.pyx":340
+ *             self.num_nodes = 0
+ *         if self.bytes_strings != NULL and self.num_strings > 0:
  *             for i in range(self.num_strings):             # <<<<<<<<<<<<<<
  *                 if self.bytes_strings[i] != NULL:
  *                     PyMem_Free(self.bytes_strings[i])
  */
-    __pyx_t_2 = __pyx_v_self->num_strings;
-    __pyx_t_3 = __pyx_t_2;
-    for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
-      __pyx_v_i = __pyx_t_4;
+    __pyx_t_3 = __pyx_v_self->num_strings;
+    __pyx_t_4 = __pyx_t_3;
+    for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
+      __pyx_v_i = __pyx_t_5;
 
-      /* "elaina_triehard/impl_c.pyx":298
- *         if self.bytes_strings != NULL:
+      /* "elaina_triehard/impl_c.pyx":341
+ *         if self.bytes_strings != NULL and self.num_strings > 0:
  *             for i in range(self.num_strings):
  *                 if self.bytes_strings[i] != NULL:             # <<<<<<<<<<<<<<
  *                     PyMem_Free(self.bytes_strings[i])
- *             free(self.bytes_strings)
+ *                     self.bytes_strings[i] = NULL
  */
       __pyx_t_1 = ((__pyx_v_self->bytes_strings[__pyx_v_i]) != NULL);
       if (__pyx_t_1) {
 
-        /* "elaina_triehard/impl_c.pyx":299
+        /* "elaina_triehard/impl_c.pyx":342
  *             for i in range(self.num_strings):
  *                 if self.bytes_strings[i] != NULL:
  *                     PyMem_Free(self.bytes_strings[i])             # <<<<<<<<<<<<<<
+ *                     self.bytes_strings[i] = NULL
  *             free(self.bytes_strings)
- *             self.bytes_strings = NULL
  */
         PyMem_Free((__pyx_v_self->bytes_strings[__pyx_v_i]));
 
-        /* "elaina_triehard/impl_c.pyx":298
- *         if self.bytes_strings != NULL:
+        /* "elaina_triehard/impl_c.pyx":343
+ *                 if self.bytes_strings[i] != NULL:
+ *                     PyMem_Free(self.bytes_strings[i])
+ *                     self.bytes_strings[i] = NULL             # <<<<<<<<<<<<<<
+ *             free(self.bytes_strings)
+ *             self.bytes_strings = NULL
+ */
+        (__pyx_v_self->bytes_strings[__pyx_v_i]) = NULL;
+
+        /* "elaina_triehard/impl_c.pyx":341
+ *         if self.bytes_strings != NULL and self.num_strings > 0:
  *             for i in range(self.num_strings):
  *                 if self.bytes_strings[i] != NULL:             # <<<<<<<<<<<<<<
  *                     PyMem_Free(self.bytes_strings[i])
- *             free(self.bytes_strings)
+ *                     self.bytes_strings[i] = NULL
  */
       }
     }
 
-    /* "elaina_triehard/impl_c.pyx":300
- *                 if self.bytes_strings[i] != NULL:
+    /* "elaina_triehard/impl_c.pyx":344
  *                     PyMem_Free(self.bytes_strings[i])
+ *                     self.bytes_strings[i] = NULL
  *             free(self.bytes_strings)             # <<<<<<<<<<<<<<
  *             self.bytes_strings = NULL
- *         if self.bytes_lengths != NULL:
+ *             self.num_strings = 0
  */
     free(__pyx_v_self->bytes_strings);
 
-    /* "elaina_triehard/impl_c.pyx":301
- *                     PyMem_Free(self.bytes_strings[i])
+    /* "elaina_triehard/impl_c.pyx":345
+ *                     self.bytes_strings[i] = NULL
  *             free(self.bytes_strings)
  *             self.bytes_strings = NULL             # <<<<<<<<<<<<<<
+ *             self.num_strings = 0
  *         if self.bytes_lengths != NULL:
- *             free(self.bytes_lengths)
  */
     __pyx_v_self->bytes_strings = NULL;
 
-    /* "elaina_triehard/impl_c.pyx":296
- *             free(self.nodes)
+    /* "elaina_triehard/impl_c.pyx":346
+ *             free(self.bytes_strings)
+ *             self.bytes_strings = NULL
+ *             self.num_strings = 0             # <<<<<<<<<<<<<<
+ *         if self.bytes_lengths != NULL:
+ *             free(self.bytes_lengths)
+ */
+    __pyx_v_self->num_strings = 0;
+
+    /* "elaina_triehard/impl_c.pyx":339
  *             self.nodes = NULL
- *         if self.bytes_strings != NULL:             # <<<<<<<<<<<<<<
+ *             self.num_nodes = 0
+ *         if self.bytes_strings != NULL and self.num_strings > 0:             # <<<<<<<<<<<<<<
  *             for i in range(self.num_strings):
  *                 if self.bytes_strings[i] != NULL:
  */
   }
 
-  /* "elaina_triehard/impl_c.pyx":302
- *             free(self.bytes_strings)
+  /* "elaina_triehard/impl_c.pyx":347
  *             self.bytes_strings = NULL
+ *             self.num_strings = 0
  *         if self.bytes_lengths != NULL:             # <<<<<<<<<<<<<<
  *             free(self.bytes_lengths)
  *             self.bytes_lengths = NULL
@@ -4903,31 +5762,31 @@ static void __pyx_pf_15elaina_triehard_6impl_c_8TrieHard_4__dealloc__(struct __p
   __pyx_t_1 = (__pyx_v_self->bytes_lengths != NULL);
   if (__pyx_t_1) {
 
-    /* "elaina_triehard/impl_c.pyx":303
- *             self.bytes_strings = NULL
+    /* "elaina_triehard/impl_c.pyx":348
+ *             self.num_strings = 0
  *         if self.bytes_lengths != NULL:
  *             free(self.bytes_lengths)             # <<<<<<<<<<<<<<
  *             self.bytes_lengths = NULL
  */
     free(__pyx_v_self->bytes_lengths);
 
-    /* "elaina_triehard/impl_c.pyx":304
+    /* "elaina_triehard/impl_c.pyx":349
  *         if self.bytes_lengths != NULL:
  *             free(self.bytes_lengths)
  *             self.bytes_lengths = NULL             # <<<<<<<<<<<<<<
  */
     __pyx_v_self->bytes_lengths = NULL;
 
-    /* "elaina_triehard/impl_c.pyx":302
- *             free(self.bytes_strings)
+    /* "elaina_triehard/impl_c.pyx":347
  *             self.bytes_strings = NULL
+ *             self.num_strings = 0
  *         if self.bytes_lengths != NULL:             # <<<<<<<<<<<<<<
  *             free(self.bytes_lengths)
  *             self.bytes_lengths = NULL
  */
   }
 
-  /* "elaina_triehard/impl_c.pyx":280
+  /* "elaina_triehard/impl_c.pyx":322
  *             return ''
  * 
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
@@ -5322,18 +6181,30 @@ static PyMethodDef __pyx_methods[] = {
 
 static int __Pyx_CreateStringTabAndInitStrings(void) {
   __Pyx_StringTabEntry __pyx_string_tab[] = {
-    {&__pyx_kp_u_, __pyx_k_, sizeof(__pyx_k_), 0, 1, 0, 0},
+    {&__pyx_kp_u_Failed_to_allocate_memory_for_by, __pyx_k_Failed_to_allocate_memory_for_by, sizeof(__pyx_k_Failed_to_allocate_memory_for_by), 0, 1, 0, 0},
+    {&__pyx_kp_u_Failed_to_allocate_memory_for_by_2, __pyx_k_Failed_to_allocate_memory_for_by_2, sizeof(__pyx_k_Failed_to_allocate_memory_for_by_2), 0, 1, 0, 0},
+    {&__pyx_kp_u_Failed_to_allocate_memory_for_by_3, __pyx_k_Failed_to_allocate_memory_for_by_3, sizeof(__pyx_k_Failed_to_allocate_memory_for_by_3), 0, 1, 0, 0},
+    {&__pyx_kp_u_Failed_to_allocate_memory_for_ch, __pyx_k_Failed_to_allocate_memory_for_ch, sizeof(__pyx_k_Failed_to_allocate_memory_for_ch), 0, 1, 0, 0},
+    {&__pyx_kp_u_Failed_to_allocate_memory_for_ch_2, __pyx_k_Failed_to_allocate_memory_for_ch_2, sizeof(__pyx_k_Failed_to_allocate_memory_for_ch_2), 0, 1, 0, 0},
+    {&__pyx_kp_u_Failed_to_allocate_memory_for_ch_3, __pyx_k_Failed_to_allocate_memory_for_ch_3, sizeof(__pyx_k_Failed_to_allocate_memory_for_ch_3), 0, 1, 0, 0},
+    {&__pyx_kp_u_Failed_to_allocate_memory_for_no, __pyx_k_Failed_to_allocate_memory_for_no, sizeof(__pyx_k_Failed_to_allocate_memory_for_no), 0, 1, 0, 0},
+    {&__pyx_kp_u_Failed_to_allocate_memory_for_wo, __pyx_k_Failed_to_allocate_memory_for_wo, sizeof(__pyx_k_Failed_to_allocate_memory_for_wo), 0, 1, 0, 0},
+    {&__pyx_kp_u_Failed_to_reallocate_memory_for, __pyx_k_Failed_to_reallocate_memory_for, sizeof(__pyx_k_Failed_to_reallocate_memory_for), 0, 1, 0, 0},
+    {&__pyx_n_s_MemoryError, __pyx_k_MemoryError, sizeof(__pyx_k_MemoryError), 0, 0, 1, 1},
     {&__pyx_n_s_TrieHard, __pyx_k_TrieHard, sizeof(__pyx_k_TrieHard), 0, 0, 1, 1},
     {&__pyx_n_s_TrieHard___reduce_cython, __pyx_k_TrieHard___reduce_cython, sizeof(__pyx_k_TrieHard___reduce_cython), 0, 0, 1, 1},
     {&__pyx_n_s_TrieHard___setstate_cython, __pyx_k_TrieHard___setstate_cython, sizeof(__pyx_k_TrieHard___setstate_cython), 0, 0, 1, 1},
     {&__pyx_n_s_TrieHard_get_closest_prefix, __pyx_k_TrieHard_get_closest_prefix, sizeof(__pyx_k_TrieHard_get_closest_prefix), 0, 0, 1, 1},
     {&__pyx_n_s_TypeError, __pyx_k_TypeError, sizeof(__pyx_k_TypeError), 0, 0, 1, 1},
-    {&__pyx_n_s__8, __pyx_k__8, sizeof(__pyx_k__8), 0, 0, 1, 1},
+    {&__pyx_kp_u__10, __pyx_k__10, sizeof(__pyx_k__10), 0, 1, 0, 0},
+    {&__pyx_n_s__17, __pyx_k__17, sizeof(__pyx_k__17), 0, 0, 1, 1},
     {&__pyx_n_s_append, __pyx_k_append, sizeof(__pyx_k_append), 0, 0, 1, 1},
     {&__pyx_n_s_asyncio_coroutines, __pyx_k_asyncio_coroutines, sizeof(__pyx_k_asyncio_coroutines), 0, 0, 1, 1},
     {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
+    {&__pyx_n_s_dealloc, __pyx_k_dealloc, sizeof(__pyx_k_dealloc), 0, 0, 1, 1},
     {&__pyx_kp_u_disable, __pyx_k_disable, sizeof(__pyx_k_disable), 0, 1, 0, 0},
     {&__pyx_n_s_elaina_triehard_impl_c, __pyx_k_elaina_triehard_impl_c, sizeof(__pyx_k_elaina_triehard_impl_c), 0, 0, 1, 1},
+    {&__pyx_kp_s_elaina_triehard_impl_c_pyx, __pyx_k_elaina_triehard_impl_c_pyx, sizeof(__pyx_k_elaina_triehard_impl_c_pyx), 0, 0, 1, 0},
     {&__pyx_kp_u_enable, __pyx_k_enable, sizeof(__pyx_k_enable), 0, 1, 0, 0},
     {&__pyx_n_s_encode, __pyx_k_encode, sizeof(__pyx_k_encode), 0, 0, 1, 1},
     {&__pyx_kp_u_gc, __pyx_k_gc, sizeof(__pyx_k_gc), 0, 1, 0, 0},
@@ -5355,7 +6226,6 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_kp_s_self_bytes_lengths_self_bytes_st, __pyx_k_self_bytes_lengths_self_bytes_st, sizeof(__pyx_k_self_bytes_lengths_self_bytes_st), 0, 0, 1, 0},
     {&__pyx_n_s_setstate, __pyx_k_setstate, sizeof(__pyx_k_setstate), 0, 0, 1, 1},
     {&__pyx_n_s_setstate_cython, __pyx_k_setstate_cython, sizeof(__pyx_k_setstate_cython), 0, 0, 1, 1},
-    {&__pyx_kp_s_src_elaina_triehard_impl_c_pyx, __pyx_k_src_elaina_triehard_impl_c_pyx, sizeof(__pyx_k_src_elaina_triehard_impl_c_pyx), 0, 0, 1, 0},
     {&__pyx_n_s_strings, __pyx_k_strings, sizeof(__pyx_k_strings), 0, 0, 1, 1},
     {&__pyx_n_u_strings, __pyx_k_strings, sizeof(__pyx_k_strings), 0, 1, 0, 1},
     {&__pyx_kp_s_stringsource, __pyx_k_stringsource, sizeof(__pyx_k_stringsource), 0, 0, 1, 0},
@@ -5367,7 +6237,8 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
 }
 /* #### Code section: cached_builtins ### */
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 89, __pyx_L1_error)
+  __pyx_builtin_MemoryError = __Pyx_GetBuiltinName(__pyx_n_s_MemoryError); if (!__pyx_builtin_MemoryError) __PYX_ERR(0, 96, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 105, __pyx_L1_error)
   __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(1, 2, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
@@ -5379,27 +6250,126 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "elaina_triehard/impl_c.pyx":233
- *             free(child_lengths_array)
+  /* "elaina_triehard/impl_c.pyx":96
+ *         self.bytes_strings = <unsigned char**>malloc(self.num_strings * sizeof(unsigned char*))
+ *         if self.bytes_strings == NULL:
+ *             raise MemoryError("Failed to allocate memory for bytes_strings.")             # <<<<<<<<<<<<<<
+ * 
+ *         self.bytes_lengths = <int*>malloc(self.num_strings * sizeof(int))
+ */
+  __pyx_tuple_ = PyTuple_Pack(1, __pyx_kp_u_Failed_to_allocate_memory_for_by); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 96, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple_);
+  __Pyx_GIVEREF(__pyx_tuple_);
+
+  /* "elaina_triehard/impl_c.pyx":102
+ *             free(self.bytes_strings)
+ *             self.bytes_strings = NULL
+ *             raise MemoryError("Failed to allocate memory for bytes_lengths.")             # <<<<<<<<<<<<<<
+ * 
+ *         #  NULL
+ */
+  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_kp_u_Failed_to_allocate_memory_for_by_2); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 102, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__2);
+  __Pyx_GIVEREF(__pyx_tuple__2);
+
+  /* "elaina_triehard/impl_c.pyx":116
+ *                 self.bytes_strings[i] = <unsigned char*>PyMem_Malloc(length * sizeof(unsigned char))
+ *                 if self.bytes_strings[i] == NULL:
+ *                     raise MemoryError("Failed to allocate memory for bytes_strings[i].")             # <<<<<<<<<<<<<<
+ *                 memcpy(self.bytes_strings[i], bs, length * sizeof(unsigned char))
+ *                 for j in range(length):
+ */
+  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_u_Failed_to_allocate_memory_for_by_3); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 116, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__3);
+  __Pyx_GIVEREF(__pyx_tuple__3);
+
+  /* "elaina_triehard/impl_c.pyx":149
+ *         self.nodes = <TrieHardNode*>malloc(self.num_nodes * sizeof(TrieHardNode))
+ *         if self.nodes == NULL:
+ *             raise MemoryError("Failed to allocate memory for nodes.")             # <<<<<<<<<<<<<<
+ *         #
+ *         self.nodes[0].mask = 0
+ */
+  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_Failed_to_allocate_memory_for_no); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 149, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__4);
+  __Pyx_GIVEREF(__pyx_tuple__4);
+
+  /* "elaina_triehard/impl_c.pyx":197
+ *                 self.nodes[node_index].word = <char*>malloc((word_length + 1) * sizeof(char))
+ *                 if self.nodes[node_index].word == NULL:
+ *                     raise MemoryError("Failed to allocate memory for word.")             # <<<<<<<<<<<<<<
+ *                 memcpy(self.nodes[node_index].word, bs, word_length * sizeof(char))
+ *                 self.nodes[node_index].word[word_length] = b'\0'  #
+ */
+  __pyx_tuple__5 = PyTuple_Pack(1, __pyx_kp_u_Failed_to_allocate_memory_for_wo); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(0, 197, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__5);
+  __Pyx_GIVEREF(__pyx_tuple__5);
+
+  /* "elaina_triehard/impl_c.pyx":223
+ *             children_indices = <unsigned int*>malloc(num_children * sizeof(unsigned int))
+ *             if children_indices == NULL:
+ *                 raise MemoryError("Failed to allocate memory for children_indices.")             # <<<<<<<<<<<<<<
+ * 
+ *         #
+ */
+  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_u_Failed_to_allocate_memory_for_ch); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 223, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__6);
+  __Pyx_GIVEREF(__pyx_tuple__6);
+
+  /* "elaina_triehard/impl_c.pyx":242
+ *             temp_nodes = <TrieHardNode*>realloc(self.nodes, (self.num_nodes + 1) * sizeof(TrieHardNode))
+ *             if temp_nodes == NULL:
+ *                 raise MemoryError("Failed to reallocate memory for nodes.")             # <<<<<<<<<<<<<<
+ *             self.nodes = temp_nodes
+ *             self.num_nodes += 1
+ */
+  __pyx_tuple__7 = PyTuple_Pack(1, __pyx_kp_u_Failed_to_reallocate_memory_for); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 242, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__7);
+  __Pyx_GIVEREF(__pyx_tuple__7);
+
+  /* "elaina_triehard/impl_c.pyx":261
+ *             child_strings_array = <unsigned char**>malloc(child_num_strings * sizeof(unsigned char*))
+ *             if child_strings_array == NULL:
+ *                 raise MemoryError("Failed to allocate memory for child_strings_array.")             # <<<<<<<<<<<<<<
+ *             child_lengths_array = <int*>malloc(child_num_strings * sizeof(int))
+ *             if child_lengths_array == NULL:
+ */
+  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_u_Failed_to_allocate_memory_for_ch_2); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 261, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__8);
+  __Pyx_GIVEREF(__pyx_tuple__8);
+
+  /* "elaina_triehard/impl_c.pyx":265
+ *             if child_lengths_array == NULL:
+ *                 free(child_strings_array)
+ *                 raise MemoryError("Failed to allocate memory for child_lengths_array.")             # <<<<<<<<<<<<<<
+ *             for j in range(child_num_strings):
+ *                 child_strings_array[j] = child_strings_list[j]
+ */
+  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_kp_u_Failed_to_allocate_memory_for_ch_3); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 265, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__9);
+  __Pyx_GIVEREF(__pyx_tuple__9);
+
+  /* "elaina_triehard/impl_c.pyx":275
+ *                 free(child_lengths_array)
  * 
  *     cpdef str get_closest_prefix(self, str key):             # <<<<<<<<<<<<<<
  *         """
  *          Trie
  */
-  __pyx_tuple__2 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_key); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 233, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__2);
-  __Pyx_GIVEREF(__pyx_tuple__2);
-  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_elaina_triehard_impl_c_pyx, __pyx_n_s_get_closest_prefix, 233, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __pyx_tuple__11 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_key); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(0, 275, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__11);
+  __Pyx_GIVEREF(__pyx_tuple__11);
+  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__11, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_elaina_triehard_impl_c_pyx, __pyx_n_s_get_closest_prefix, 275, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(0, 275, __pyx_L1_error)
 
   /* "(tree fragment)":1
  * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
  *     raise TypeError, "self.bytes_lengths,self.bytes_strings,self.nodes cannot be converted to a Python object for pickling"
  * def __setstate_cython__(self, __pyx_state):
  */
-  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__4);
-  __Pyx_GIVEREF(__pyx_tuple__4);
-  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__4, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_reduce_cython, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __pyx_tuple__13 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__13);
+  __Pyx_GIVEREF(__pyx_tuple__13);
+  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__13, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_reduce_cython, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(1, 1, __pyx_L1_error)
 
   /* "(tree fragment)":3
  * def __reduce_cython__(self):
@@ -5407,10 +6377,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
  *     raise TypeError, "self.bytes_lengths,self.bytes_strings,self.nodes cannot be converted to a Python object for pickling"
  */
-  __pyx_tuple__6 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_pyx_state); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(1, 3, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__6);
-  __Pyx_GIVEREF(__pyx_tuple__6);
-  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_setstate_cython, 3, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(1, 3, __pyx_L1_error)
+  __pyx_tuple__15 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_pyx_state); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(1, 3, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__15);
+  __Pyx_GIVEREF(__pyx_tuple__15);
+  __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__15, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_setstate_cython, 3, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(1, 3, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -5477,15 +6447,15 @@ static int __Pyx_modinit_type_init_code(void) {
   __pyx_vtable_15elaina_triehard_6impl_c_TrieHard._build_node = (void (*)(struct __pyx_obj_15elaina_triehard_6impl_c_TrieHard *, int, unsigned char **, int *, int, int))__pyx_f_15elaina_triehard_6impl_c_8TrieHard__build_node;
   __pyx_vtable_15elaina_triehard_6impl_c_TrieHard.get_closest_prefix = (PyObject *(*)(struct __pyx_obj_15elaina_triehard_6impl_c_TrieHard *, PyObject *, int __pyx_skip_dispatch))__pyx_f_15elaina_triehard_6impl_c_8TrieHard_get_closest_prefix;
   #if CYTHON_USE_TYPE_SPECS
-  __pyx_ptype_15elaina_triehard_6impl_c_TrieHard = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_15elaina_triehard_6impl_c_TrieHard_spec, NULL); if (unlikely(!__pyx_ptype_15elaina_triehard_6impl_c_TrieHard)) __PYX_ERR(0, 58, __pyx_L1_error)
-  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_15elaina_triehard_6impl_c_TrieHard_spec, __pyx_ptype_15elaina_triehard_6impl_c_TrieHard) < 0) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_ptype_15elaina_triehard_6impl_c_TrieHard = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_15elaina_triehard_6impl_c_TrieHard_spec, NULL); if (unlikely(!__pyx_ptype_15elaina_triehard_6impl_c_TrieHard)) __PYX_ERR(0, 55, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_15elaina_triehard_6impl_c_TrieHard_spec, __pyx_ptype_15elaina_triehard_6impl_c_TrieHard) < 0) __PYX_ERR(0, 55, __pyx_L1_error)
   #else
   __pyx_ptype_15elaina_triehard_6impl_c_TrieHard = &__pyx_type_15elaina_triehard_6impl_c_TrieHard;
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
   #endif
   #if !CYTHON_USE_TYPE_SPECS
-  if (__Pyx_PyType_Ready(__pyx_ptype_15elaina_triehard_6impl_c_TrieHard) < 0) __PYX_ERR(0, 58, __pyx_L1_error)
+  if (__Pyx_PyType_Ready(__pyx_ptype_15elaina_triehard_6impl_c_TrieHard) < 0) __PYX_ERR(0, 55, __pyx_L1_error)
   #endif
   #if PY_MAJOR_VERSION < 3
   __pyx_ptype_15elaina_triehard_6impl_c_TrieHard->tp_print = 0;
@@ -5497,7 +6467,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_UPDATE_DESCRIPTOR_DOC
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)__pyx_ptype_15elaina_triehard_6impl_c_TrieHard, "__init__"); if (unlikely(!wrapper)) __PYX_ERR(0, 58, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)__pyx_ptype_15elaina_triehard_6impl_c_TrieHard, "__init__"); if (unlikely(!wrapper)) __PYX_ERR(0, 55, __pyx_L1_error)
     if (__Pyx_IS_TYPE(wrapper, &PyWrapperDescr_Type)) {
       __pyx_wrapperbase_15elaina_triehard_6impl_c_8TrieHard___init__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_15elaina_triehard_6impl_c_8TrieHard___init__.doc = __pyx_doc_15elaina_triehard_6impl_c_8TrieHard___init__;
@@ -5505,13 +6475,13 @@ static int __Pyx_modinit_type_init_code(void) {
     }
   }
   #endif
-  if (__Pyx_SetVtable(__pyx_ptype_15elaina_triehard_6impl_c_TrieHard, __pyx_vtabptr_15elaina_triehard_6impl_c_TrieHard) < 0) __PYX_ERR(0, 58, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_ptype_15elaina_triehard_6impl_c_TrieHard, __pyx_vtabptr_15elaina_triehard_6impl_c_TrieHard) < 0) __PYX_ERR(0, 55, __pyx_L1_error)
   #if !CYTHON_COMPILING_IN_LIMITED_API
-  if (__Pyx_MergeVtables(__pyx_ptype_15elaina_triehard_6impl_c_TrieHard) < 0) __PYX_ERR(0, 58, __pyx_L1_error)
+  if (__Pyx_MergeVtables(__pyx_ptype_15elaina_triehard_6impl_c_TrieHard) < 0) __PYX_ERR(0, 55, __pyx_L1_error)
   #endif
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_TrieHard, (PyObject *) __pyx_ptype_15elaina_triehard_6impl_c_TrieHard) < 0) __PYX_ERR(0, 58, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_TrieHard, (PyObject *) __pyx_ptype_15elaina_triehard_6impl_c_TrieHard) < 0) __PYX_ERR(0, 55, __pyx_L1_error)
   #if !CYTHON_COMPILING_IN_LIMITED_API
-  if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_15elaina_triehard_6impl_c_TrieHard) < 0) __PYX_ERR(0, 58, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_15elaina_triehard_6impl_c_TrieHard) < 0) __PYX_ERR(0, 55, __pyx_L1_error)
   #endif
   __Pyx_RefNannyFinishContext();
   return 0;
@@ -5822,16 +6792,16 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
 
-  /* "elaina_triehard/impl_c.pyx":233
- *             free(child_lengths_array)
+  /* "elaina_triehard/impl_c.pyx":275
+ *                 free(child_lengths_array)
  * 
  *     cpdef str get_closest_prefix(self, str key):             # <<<<<<<<<<<<<<
  *         """
  *          Trie
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_15elaina_triehard_6impl_c_8TrieHard_3get_closest_prefix, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_TrieHard_get_closest_prefix, NULL, __pyx_n_s_elaina_triehard_impl_c, __pyx_d, ((PyObject *)__pyx_codeobj__3)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_15elaina_triehard_6impl_c_8TrieHard_3get_closest_prefix, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_TrieHard_get_closest_prefix, NULL, __pyx_n_s_elaina_triehard_impl_c, __pyx_d, ((PyObject *)__pyx_codeobj__12)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 275, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_15elaina_triehard_6impl_c_TrieHard, __pyx_n_s_get_closest_prefix, __pyx_t_2) < 0) __PYX_ERR(0, 233, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_15elaina_triehard_6impl_c_TrieHard, __pyx_n_s_get_closest_prefix, __pyx_t_2) < 0) __PYX_ERR(0, 275, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_15elaina_triehard_6impl_c_TrieHard);
 
@@ -5840,7 +6810,7 @@ if (!__Pyx_RefNanny) {
  *     raise TypeError, "self.bytes_lengths,self.bytes_strings,self.nodes cannot be converted to a Python object for pickling"
  * def __setstate_cython__(self, __pyx_state):
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_15elaina_triehard_6impl_c_8TrieHard_7__reduce_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_TrieHard___reduce_cython, NULL, __pyx_n_s_elaina_triehard_impl_c, __pyx_d, ((PyObject *)__pyx_codeobj__5)); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_15elaina_triehard_6impl_c_8TrieHard_7__reduce_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_TrieHard___reduce_cython, NULL, __pyx_n_s_elaina_triehard_impl_c, __pyx_d, ((PyObject *)__pyx_codeobj__14)); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_reduce_cython, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -5851,7 +6821,7 @@ if (!__Pyx_RefNanny) {
  * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
  *     raise TypeError, "self.bytes_lengths,self.bytes_strings,self.nodes cannot be converted to a Python object for pickling"
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_15elaina_triehard_6impl_c_8TrieHard_9__setstate_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_TrieHard___setstate_cython, NULL, __pyx_n_s_elaina_triehard_impl_c, __pyx_d, ((PyObject *)__pyx_codeobj__7)); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 3, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_15elaina_triehard_6impl_c_8TrieHard_9__setstate_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_TrieHard___setstate_cython, NULL, __pyx_n_s_elaina_triehard_impl_c, __pyx_d, ((PyObject *)__pyx_codeobj__16)); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 3, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_setstate_cython, __pyx_t_2) < 0) __PYX_ERR(1, 3, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -6514,6 +7484,192 @@ static void __Pyx_RaiseArgtupleInvalid(
                  (num_expected == 1) ? "" : "s", num_found);
 }
 
+/* PyObjectCall */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw) {
+    PyObject *result;
+    ternaryfunc call = Py_TYPE(func)->tp_call;
+    if (unlikely(!call))
+        return PyObject_Call(func, arg, kw);
+    #if PY_MAJOR_VERSION < 3
+    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
+        return NULL;
+    #else
+    if (unlikely(Py_EnterRecursiveCall(" while calling a Python object")))
+        return NULL;
+    #endif
+    result = (*call)(func, arg, kw);
+    Py_LeaveRecursiveCall();
+    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "NULL result without error in PyObject_Call");
+    }
+    return result;
+}
+#endif
+
+/* RaiseException */
+#if PY_MAJOR_VERSION < 3
+static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject *cause) {
+    __Pyx_PyThreadState_declare
+    CYTHON_UNUSED_VAR(cause);
+    Py_XINCREF(type);
+    if (!value || value == Py_None)
+        value = NULL;
+    else
+        Py_INCREF(value);
+    if (!tb || tb == Py_None)
+        tb = NULL;
+    else {
+        Py_INCREF(tb);
+        if (!PyTraceBack_Check(tb)) {
+            PyErr_SetString(PyExc_TypeError,
+                "raise: arg 3 must be a traceback or None");
+            goto raise_error;
+        }
+    }
+    if (PyType_Check(type)) {
+#if CYTHON_COMPILING_IN_PYPY
+        if (!value) {
+            Py_INCREF(Py_None);
+            value = Py_None;
+        }
+#endif
+        PyErr_NormalizeException(&type, &value, &tb);
+    } else {
+        if (value) {
+            PyErr_SetString(PyExc_TypeError,
+                "instance exception may not have a separate value");
+            goto raise_error;
+        }
+        value = type;
+        type = (PyObject*) Py_TYPE(type);
+        Py_INCREF(type);
+        if (!PyType_IsSubtype((PyTypeObject *)type, (PyTypeObject *)PyExc_BaseException)) {
+            PyErr_SetString(PyExc_TypeError,
+                "raise: exception class must be a subclass of BaseException");
+            goto raise_error;
+        }
+    }
+    __Pyx_PyThreadState_assign
+    __Pyx_ErrRestore(type, value, tb);
+    return;
+raise_error:
+    Py_XDECREF(value);
+    Py_XDECREF(type);
+    Py_XDECREF(tb);
+    return;
+}
+#else
+static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject *cause) {
+    PyObject* owned_instance = NULL;
+    if (tb == Py_None) {
+        tb = 0;
+    } else if (tb && !PyTraceBack_Check(tb)) {
+        PyErr_SetString(PyExc_TypeError,
+            "raise: arg 3 must be a traceback or None");
+        goto bad;
+    }
+    if (value == Py_None)
+        value = 0;
+    if (PyExceptionInstance_Check(type)) {
+        if (value) {
+            PyErr_SetString(PyExc_TypeError,
+                "instance exception may not have a separate value");
+            goto bad;
+        }
+        value = type;
+        type = (PyObject*) Py_TYPE(value);
+    } else if (PyExceptionClass_Check(type)) {
+        PyObject *instance_class = NULL;
+        if (value && PyExceptionInstance_Check(value)) {
+            instance_class = (PyObject*) Py_TYPE(value);
+            if (instance_class != type) {
+                int is_subclass = PyObject_IsSubclass(instance_class, type);
+                if (!is_subclass) {
+                    instance_class = NULL;
+                } else if (unlikely(is_subclass == -1)) {
+                    goto bad;
+                } else {
+                    type = instance_class;
+                }
+            }
+        }
+        if (!instance_class) {
+            PyObject *args;
+            if (!value)
+                args = PyTuple_New(0);
+            else if (PyTuple_Check(value)) {
+                Py_INCREF(value);
+                args = value;
+            } else
+                args = PyTuple_Pack(1, value);
+            if (!args)
+                goto bad;
+            owned_instance = PyObject_Call(type, args, NULL);
+            Py_DECREF(args);
+            if (!owned_instance)
+                goto bad;
+            value = owned_instance;
+            if (!PyExceptionInstance_Check(value)) {
+                PyErr_Format(PyExc_TypeError,
+                             "calling %R should have returned an instance of "
+                             "BaseException, not %R",
+                             type, Py_TYPE(value));
+                goto bad;
+            }
+        }
+    } else {
+        PyErr_SetString(PyExc_TypeError,
+            "raise: exception class must be a subclass of BaseException");
+        goto bad;
+    }
+    if (cause) {
+        PyObject *fixed_cause;
+        if (cause == Py_None) {
+            fixed_cause = NULL;
+        } else if (PyExceptionClass_Check(cause)) {
+            fixed_cause = PyObject_CallObject(cause, NULL);
+            if (fixed_cause == NULL)
+                goto bad;
+        } else if (PyExceptionInstance_Check(cause)) {
+            fixed_cause = cause;
+            Py_INCREF(fixed_cause);
+        } else {
+            PyErr_SetString(PyExc_TypeError,
+                            "exception causes must derive from "
+                            "BaseException");
+            goto bad;
+        }
+        PyException_SetCause(value, fixed_cause);
+    }
+    PyErr_SetObject(type, value);
+    if (tb) {
+      #if PY_VERSION_HEX >= 0x030C00A6
+        PyException_SetTraceback(value, tb);
+      #elif CYTHON_FAST_THREAD_STATE
+        PyThreadState *tstate = __Pyx_PyThreadState_Current;
+        PyObject* tmp_tb = tstate->curexc_traceback;
+        if (tb != tmp_tb) {
+            Py_INCREF(tb);
+            tstate->curexc_traceback = tb;
+            Py_XDECREF(tmp_tb);
+        }
+#else
+        PyObject *tmp_type, *tmp_value, *tmp_tb;
+        PyErr_Fetch(&tmp_type, &tmp_value, &tmp_tb);
+        Py_INCREF(tb);
+        PyErr_Restore(tmp_type, tmp_value, tb);
+        Py_XDECREF(tmp_tb);
+#endif
+    }
+bad:
+    Py_XDECREF(owned_instance);
+    return;
+}
+#endif
+
 /* GetItemInt */
 static PyObject *__Pyx_GetItemInt_Generic(PyObject *o, PyObject* j) {
     PyObject *r;
@@ -6732,31 +7888,6 @@ done:
 }
 #endif
 
-/* PyObjectCall */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw) {
-    PyObject *result;
-    ternaryfunc call = Py_TYPE(func)->tp_call;
-    if (unlikely(!call))
-        return PyObject_Call(func, arg, kw);
-    #if PY_MAJOR_VERSION < 3
-    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
-        return NULL;
-    #else
-    if (unlikely(Py_EnterRecursiveCall(" while calling a Python object")))
-        return NULL;
-    #endif
-    result = (*call)(func, arg, kw);
-    Py_LeaveRecursiveCall();
-    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
-        PyErr_SetString(
-            PyExc_SystemError,
-            "NULL result without error in PyObject_Call");
-    }
-    return result;
-}
-#endif
-
 /* PyObjectCallMethO */
 #if CYTHON_COMPILING_IN_CPYTHON
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg) {
@@ -6870,6 +8001,237 @@ __Pyx_RaiseUnexpectedTypeError(const char *expected, PyObject *obj)
     __Pyx_DECREF_TypeName(obj_type_name);
     return 0;
 }
+
+/* GetTopmostException */
+#if CYTHON_USE_EXC_INFO_STACK && CYTHON_FAST_THREAD_STATE
+static _PyErr_StackItem *
+__Pyx_PyErr_GetTopmostException(PyThreadState *tstate)
+{
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    while ((exc_info->exc_value == NULL || exc_info->exc_value == Py_None) &&
+           exc_info->previous_item != NULL)
+    {
+        exc_info = exc_info->previous_item;
+    }
+    return exc_info;
+}
+#endif
+
+/* SaveResetException */
+#if CYTHON_FAST_THREAD_STATE
+static CYTHON_INLINE void __Pyx__ExceptionSave(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
+  #if CYTHON_USE_EXC_INFO_STACK && PY_VERSION_HEX >= 0x030B00a4
+    _PyErr_StackItem *exc_info = __Pyx_PyErr_GetTopmostException(tstate);
+    PyObject *exc_value = exc_info->exc_value;
+    if (exc_value == NULL || exc_value == Py_None) {
+        *value = NULL;
+        *type = NULL;
+        *tb = NULL;
+    } else {
+        *value = exc_value;
+        Py_INCREF(*value);
+        *type = (PyObject*) Py_TYPE(exc_value);
+        Py_INCREF(*type);
+        *tb = PyException_GetTraceback(exc_value);
+    }
+  #elif CYTHON_USE_EXC_INFO_STACK
+    _PyErr_StackItem *exc_info = __Pyx_PyErr_GetTopmostException(tstate);
+    *type = exc_info->exc_type;
+    *value = exc_info->exc_value;
+    *tb = exc_info->exc_traceback;
+    Py_XINCREF(*type);
+    Py_XINCREF(*value);
+    Py_XINCREF(*tb);
+  #else
+    *type = tstate->exc_type;
+    *value = tstate->exc_value;
+    *tb = tstate->exc_traceback;
+    Py_XINCREF(*type);
+    Py_XINCREF(*value);
+    Py_XINCREF(*tb);
+  #endif
+}
+static CYTHON_INLINE void __Pyx__ExceptionReset(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb) {
+  #if CYTHON_USE_EXC_INFO_STACK && PY_VERSION_HEX >= 0x030B00a4
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    PyObject *tmp_value = exc_info->exc_value;
+    exc_info->exc_value = value;
+    Py_XDECREF(tmp_value);
+    Py_XDECREF(type);
+    Py_XDECREF(tb);
+  #else
+    PyObject *tmp_type, *tmp_value, *tmp_tb;
+    #if CYTHON_USE_EXC_INFO_STACK
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    tmp_type = exc_info->exc_type;
+    tmp_value = exc_info->exc_value;
+    tmp_tb = exc_info->exc_traceback;
+    exc_info->exc_type = type;
+    exc_info->exc_value = value;
+    exc_info->exc_traceback = tb;
+    #else
+    tmp_type = tstate->exc_type;
+    tmp_value = tstate->exc_value;
+    tmp_tb = tstate->exc_traceback;
+    tstate->exc_type = type;
+    tstate->exc_value = value;
+    tstate->exc_traceback = tb;
+    #endif
+    Py_XDECREF(tmp_type);
+    Py_XDECREF(tmp_value);
+    Py_XDECREF(tmp_tb);
+  #endif
+}
+#endif
+
+/* GetException */
+#if CYTHON_FAST_THREAD_STATE
+static int __Pyx__GetException(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb)
+#else
+static int __Pyx_GetException(PyObject **type, PyObject **value, PyObject **tb)
+#endif
+{
+    PyObject *local_type = NULL, *local_value, *local_tb = NULL;
+#if CYTHON_FAST_THREAD_STATE
+    PyObject *tmp_type, *tmp_value, *tmp_tb;
+  #if PY_VERSION_HEX >= 0x030C00A6
+    local_value = tstate->current_exception;
+    tstate->current_exception = 0;
+    if (likely(local_value)) {
+        local_type = (PyObject*) Py_TYPE(local_value);
+        Py_INCREF(local_type);
+        local_tb = PyException_GetTraceback(local_value);
+    }
+  #else
+    local_type = tstate->curexc_type;
+    local_value = tstate->curexc_value;
+    local_tb = tstate->curexc_traceback;
+    tstate->curexc_type = 0;
+    tstate->curexc_value = 0;
+    tstate->curexc_traceback = 0;
+  #endif
+#else
+    PyErr_Fetch(&local_type, &local_value, &local_tb);
+#endif
+    PyErr_NormalizeException(&local_type, &local_value, &local_tb);
+#if CYTHON_FAST_THREAD_STATE && PY_VERSION_HEX >= 0x030C00A6
+    if (unlikely(tstate->current_exception))
+#elif CYTHON_FAST_THREAD_STATE
+    if (unlikely(tstate->curexc_type))
+#else
+    if (unlikely(PyErr_Occurred()))
+#endif
+        goto bad;
+    #if PY_MAJOR_VERSION >= 3
+    if (local_tb) {
+        if (unlikely(PyException_SetTraceback(local_value, local_tb) < 0))
+            goto bad;
+    }
+    #endif
+    Py_XINCREF(local_tb);
+    Py_XINCREF(local_type);
+    Py_XINCREF(local_value);
+    *type = local_type;
+    *value = local_value;
+    *tb = local_tb;
+#if CYTHON_FAST_THREAD_STATE
+    #if CYTHON_USE_EXC_INFO_STACK
+    {
+        _PyErr_StackItem *exc_info = tstate->exc_info;
+      #if PY_VERSION_HEX >= 0x030B00a4
+        tmp_value = exc_info->exc_value;
+        exc_info->exc_value = local_value;
+        tmp_type = NULL;
+        tmp_tb = NULL;
+        Py_XDECREF(local_type);
+        Py_XDECREF(local_tb);
+      #else
+        tmp_type = exc_info->exc_type;
+        tmp_value = exc_info->exc_value;
+        tmp_tb = exc_info->exc_traceback;
+        exc_info->exc_type = local_type;
+        exc_info->exc_value = local_value;
+        exc_info->exc_traceback = local_tb;
+      #endif
+    }
+    #else
+    tmp_type = tstate->exc_type;
+    tmp_value = tstate->exc_value;
+    tmp_tb = tstate->exc_traceback;
+    tstate->exc_type = local_type;
+    tstate->exc_value = local_value;
+    tstate->exc_traceback = local_tb;
+    #endif
+    Py_XDECREF(tmp_type);
+    Py_XDECREF(tmp_value);
+    Py_XDECREF(tmp_tb);
+#else
+    PyErr_SetExcInfo(local_type, local_value, local_tb);
+#endif
+    return 0;
+bad:
+    *type = 0;
+    *value = 0;
+    *tb = 0;
+    Py_XDECREF(local_type);
+    Py_XDECREF(local_value);
+    Py_XDECREF(local_tb);
+    return -1;
+}
+
+/* SwapException */
+#if CYTHON_FAST_THREAD_STATE
+static CYTHON_INLINE void __Pyx__ExceptionSwap(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
+    PyObject *tmp_type, *tmp_value, *tmp_tb;
+  #if CYTHON_USE_EXC_INFO_STACK && PY_VERSION_HEX >= 0x030B00a4
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    tmp_value = exc_info->exc_value;
+    exc_info->exc_value = *value;
+    if (tmp_value == NULL || tmp_value == Py_None) {
+        Py_XDECREF(tmp_value);
+        tmp_value = NULL;
+        tmp_type = NULL;
+        tmp_tb = NULL;
+    } else {
+        tmp_type = (PyObject*) Py_TYPE(tmp_value);
+        Py_INCREF(tmp_type);
+        #if CYTHON_COMPILING_IN_CPYTHON
+        tmp_tb = ((PyBaseExceptionObject*) tmp_value)->traceback;
+        Py_XINCREF(tmp_tb);
+        #else
+        tmp_tb = PyException_GetTraceback(tmp_value);
+        #endif
+    }
+  #elif CYTHON_USE_EXC_INFO_STACK
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    tmp_type = exc_info->exc_type;
+    tmp_value = exc_info->exc_value;
+    tmp_tb = exc_info->exc_traceback;
+    exc_info->exc_type = *type;
+    exc_info->exc_value = *value;
+    exc_info->exc_traceback = *tb;
+  #else
+    tmp_type = tstate->exc_type;
+    tmp_value = tstate->exc_value;
+    tmp_tb = tstate->exc_traceback;
+    tstate->exc_type = *type;
+    tstate->exc_value = *value;
+    tstate->exc_traceback = *tb;
+  #endif
+    *type = tmp_type;
+    *value = tmp_value;
+    *tb = tmp_tb;
+}
+#else
+static CYTHON_INLINE void __Pyx_ExceptionSwap(PyObject **type, PyObject **value, PyObject **tb) {
+    PyObject *tmp_type, *tmp_value, *tmp_tb;
+    PyErr_GetExcInfo(&tmp_type, &tmp_value, &tmp_tb);
+    PyErr_SetExcInfo(*type, *value, *tb);
+    *type = tmp_type;
+    *value = tmp_value;
+    *tb = tmp_tb;
+}
+#endif
 
 /* PyIntBinop */
 #if !CYTHON_COMPILING_IN_PYPY
@@ -7308,167 +8670,6 @@ invalid_keyword:
     #endif
     return 0;
 }
-
-/* RaiseException */
-#if PY_MAJOR_VERSION < 3
-static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject *cause) {
-    __Pyx_PyThreadState_declare
-    CYTHON_UNUSED_VAR(cause);
-    Py_XINCREF(type);
-    if (!value || value == Py_None)
-        value = NULL;
-    else
-        Py_INCREF(value);
-    if (!tb || tb == Py_None)
-        tb = NULL;
-    else {
-        Py_INCREF(tb);
-        if (!PyTraceBack_Check(tb)) {
-            PyErr_SetString(PyExc_TypeError,
-                "raise: arg 3 must be a traceback or None");
-            goto raise_error;
-        }
-    }
-    if (PyType_Check(type)) {
-#if CYTHON_COMPILING_IN_PYPY
-        if (!value) {
-            Py_INCREF(Py_None);
-            value = Py_None;
-        }
-#endif
-        PyErr_NormalizeException(&type, &value, &tb);
-    } else {
-        if (value) {
-            PyErr_SetString(PyExc_TypeError,
-                "instance exception may not have a separate value");
-            goto raise_error;
-        }
-        value = type;
-        type = (PyObject*) Py_TYPE(type);
-        Py_INCREF(type);
-        if (!PyType_IsSubtype((PyTypeObject *)type, (PyTypeObject *)PyExc_BaseException)) {
-            PyErr_SetString(PyExc_TypeError,
-                "raise: exception class must be a subclass of BaseException");
-            goto raise_error;
-        }
-    }
-    __Pyx_PyThreadState_assign
-    __Pyx_ErrRestore(type, value, tb);
-    return;
-raise_error:
-    Py_XDECREF(value);
-    Py_XDECREF(type);
-    Py_XDECREF(tb);
-    return;
-}
-#else
-static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject *cause) {
-    PyObject* owned_instance = NULL;
-    if (tb == Py_None) {
-        tb = 0;
-    } else if (tb && !PyTraceBack_Check(tb)) {
-        PyErr_SetString(PyExc_TypeError,
-            "raise: arg 3 must be a traceback or None");
-        goto bad;
-    }
-    if (value == Py_None)
-        value = 0;
-    if (PyExceptionInstance_Check(type)) {
-        if (value) {
-            PyErr_SetString(PyExc_TypeError,
-                "instance exception may not have a separate value");
-            goto bad;
-        }
-        value = type;
-        type = (PyObject*) Py_TYPE(value);
-    } else if (PyExceptionClass_Check(type)) {
-        PyObject *instance_class = NULL;
-        if (value && PyExceptionInstance_Check(value)) {
-            instance_class = (PyObject*) Py_TYPE(value);
-            if (instance_class != type) {
-                int is_subclass = PyObject_IsSubclass(instance_class, type);
-                if (!is_subclass) {
-                    instance_class = NULL;
-                } else if (unlikely(is_subclass == -1)) {
-                    goto bad;
-                } else {
-                    type = instance_class;
-                }
-            }
-        }
-        if (!instance_class) {
-            PyObject *args;
-            if (!value)
-                args = PyTuple_New(0);
-            else if (PyTuple_Check(value)) {
-                Py_INCREF(value);
-                args = value;
-            } else
-                args = PyTuple_Pack(1, value);
-            if (!args)
-                goto bad;
-            owned_instance = PyObject_Call(type, args, NULL);
-            Py_DECREF(args);
-            if (!owned_instance)
-                goto bad;
-            value = owned_instance;
-            if (!PyExceptionInstance_Check(value)) {
-                PyErr_Format(PyExc_TypeError,
-                             "calling %R should have returned an instance of "
-                             "BaseException, not %R",
-                             type, Py_TYPE(value));
-                goto bad;
-            }
-        }
-    } else {
-        PyErr_SetString(PyExc_TypeError,
-            "raise: exception class must be a subclass of BaseException");
-        goto bad;
-    }
-    if (cause) {
-        PyObject *fixed_cause;
-        if (cause == Py_None) {
-            fixed_cause = NULL;
-        } else if (PyExceptionClass_Check(cause)) {
-            fixed_cause = PyObject_CallObject(cause, NULL);
-            if (fixed_cause == NULL)
-                goto bad;
-        } else if (PyExceptionInstance_Check(cause)) {
-            fixed_cause = cause;
-            Py_INCREF(fixed_cause);
-        } else {
-            PyErr_SetString(PyExc_TypeError,
-                            "exception causes must derive from "
-                            "BaseException");
-            goto bad;
-        }
-        PyException_SetCause(value, fixed_cause);
-    }
-    PyErr_SetObject(type, value);
-    if (tb) {
-      #if PY_VERSION_HEX >= 0x030C00A6
-        PyException_SetTraceback(value, tb);
-      #elif CYTHON_FAST_THREAD_STATE
-        PyThreadState *tstate = __Pyx_PyThreadState_Current;
-        PyObject* tmp_tb = tstate->curexc_traceback;
-        if (tb != tmp_tb) {
-            Py_INCREF(tb);
-            tstate->curexc_traceback = tb;
-            Py_XDECREF(tmp_tb);
-        }
-#else
-        PyObject *tmp_type, *tmp_value, *tmp_tb;
-        PyErr_Fetch(&tmp_type, &tmp_value, &tmp_tb);
-        Py_INCREF(tb);
-        PyErr_Restore(tmp_type, tmp_value, tb);
-        Py_XDECREF(tmp_tb);
-#endif
-    }
-bad:
-    Py_XDECREF(owned_instance);
-    return;
-}
-#endif
 
 /* FixUpExtensionType */
 #if CYTHON_USE_TYPE_SPECS
@@ -10191,7 +11392,7 @@ __Pyx_PyType_GetName(PyTypeObject* tp)
     if (unlikely(name == NULL) || unlikely(!PyUnicode_Check(name))) {
         PyErr_Clear();
         Py_XDECREF(name);
-        name = __Pyx_NewRef(__pyx_n_s__8);
+        name = __Pyx_NewRef(__pyx_n_s__17);
     }
     return name;
 }

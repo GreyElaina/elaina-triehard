@@ -135,8 +135,37 @@ cdef class TrieHard:
             # 构建 Trie
             self._build_trie()
         except Exception as e:
-            self.__dealloc__()
+            self._cleanup()
             raise e
+
+    cdef void _cleanup(self):
+        """
+        清理已分配的资源，防止内存泄漏。
+        """
+        cdef int i
+        if self.nodes != NULL and self.num_nodes > 0:
+            # 释放每个节点的 children_indices 和 word
+            for i in range(self.num_nodes):
+                if self.nodes[i].children_indices != NULL:
+                    free(self.nodes[i].children_indices)
+                    self.nodes[i].children_indices = NULL
+                if self.nodes[i].word != NULL:
+                    free(self.nodes[i].word)
+                    self.nodes[i].word = NULL
+            free(self.nodes)
+            self.nodes = NULL
+            self.num_nodes = 0
+        if self.bytes_strings != NULL and self.num_strings > 0:
+            for i in range(self.num_strings):
+                if self.bytes_strings[i] != NULL:
+                    PyMem_Free(self.bytes_strings[i])
+                    self.bytes_strings[i] = NULL
+            free(self.bytes_strings)
+            self.bytes_strings = NULL
+            self.num_strings = 0
+        if self.bytes_lengths != NULL:
+            free(self.bytes_lengths)
+            self.bytes_lengths = NULL
 
     cdef void _build_trie(self):
         """
@@ -319,31 +348,15 @@ cdef class TrieHard:
         else:
             return ''
 
+    def __iter__(self):
+        for ix in range(self.num_nodes):
+            node = &self.nodes[ix]
+
+            if node.is_terminal and node.word != NULL:
+                yield PyUnicode_FromString(node.word)
+
     def __dealloc__(self):
         """
         释放 TrieHard 分配的内存。
         """
-        cdef int i
-        if self.nodes != NULL and self.num_nodes > 0:
-            # 释放每个节点的 children_indices 和 word
-            for i in range(self.num_nodes):
-                if self.nodes[i].children_indices != NULL:
-                    free(self.nodes[i].children_indices)
-                    self.nodes[i].children_indices = NULL
-                if self.nodes[i].word != NULL:
-                    free(self.nodes[i].word)
-                    self.nodes[i].word = NULL
-            free(self.nodes)
-            self.nodes = NULL
-            self.num_nodes = 0
-        if self.bytes_strings != NULL and self.num_strings > 0:
-            for i in range(self.num_strings):
-                if self.bytes_strings[i] != NULL:
-                    PyMem_Free(self.bytes_strings[i])
-                    self.bytes_strings[i] = NULL
-            free(self.bytes_strings)
-            self.bytes_strings = NULL
-            self.num_strings = 0
-        if self.bytes_lengths != NULL:
-            free(self.bytes_lengths)
-            self.bytes_lengths = NULL
+        self._cleanup()

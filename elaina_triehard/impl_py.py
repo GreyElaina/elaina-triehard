@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Iterable
 
 
 class TrieHardNode:
@@ -107,3 +108,10 @@ class TrieHard:
             return key_bytes[:last_terminal_position + 1].decode('utf-8')
         else:
             return ''
+
+    def __iter__(self) -> Iterable[str]:
+        """
+        返回 Trie 中的所有字符串。
+        """
+        for bs in self.bytes_strings:
+            yield bs.decode('utf-8')

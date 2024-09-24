@@ -1,1 +1,2 @@
 include elaina_triehard/*.pyx
+exclude elaina_triehard/*.c
